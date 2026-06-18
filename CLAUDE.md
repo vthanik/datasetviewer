@@ -9,8 +9,13 @@ target) and in static Quarto/HTML. Integrates with the sibling `artoo`
 package for CDISC column metadata; plain data frames work with zero `artoo`
 dependency.
 
-Note: an earlier dplyr-code-generation feature was dropped (2026-06-18) at
-the user's request in favour of SAS-style free-text filtering.
+Note: the always-on dplyr-code box was dropped (2026-06-18) in favour of
+SAS-style free-text filtering, then the code view was re-added the same day
+as an on-demand "Show code" toolbar button (modelled on SAS Studio's
+"Display the code that creates the current table"). It emits a runnable,
+air-formatted dplyr pipeline for the current view (select / filter / arrange),
+generated in JS (`srcjs/codegen.js`); both the free-text filter and the code
+view coexist.
 
 Global directives load from `~/.claude/CLAUDE.md`. This file holds
 project-specific shared conventions. Deeper working detail, the competitor
