@@ -43,10 +43,10 @@ home:
     type-aware row filters, and CSV export -- over the whole dataset, with
     no row sampling, by querying it in the browser with DuckDB-WASM.
   links:
-  - text: SAS Studio table viewer (design inspiration)
-    href: https://documentation.sas.com/doc/en/webeditorcdc/v_001/webeditorug/p1pr6m3i1p7n4nn19f8e8x3yw1xq.htm
+  - text: SAS Studio (design inspiration)
+    href: https://www.sas.com/en_us/software/studio.html
   - text: DuckDB-WASM
-    href: https://duckdb.org/docs/api/wasm/overview
+    href: https://duckdb.org/docs/stable/clients/wasm/overview
   - text: Apache Parquet
     href: https://parquet.apache.org/
   - text: artoo -- CDISC-native dataset I/O

@@ -14,6 +14,8 @@ function bt(name) {
 // single space on each side, matching air's formatting convention.
 function translateSegment(seg) {
   return seg
+    .replace(/([A-Za-z.][\w.]*)\s+not\s+in\s*\(/gi, "!$1 %in% c(") // NOT IN (..)
+    .replace(/\bin\s*\(/gi, "%in% c(") // SQL IN (...) -> R %in% c(...)
     .replace(/<>/g, "!=")
     .replace(/\band\b/gi, "&")
     .replace(/\bor\b/gi, "|")
@@ -21,6 +23,17 @@ function translateSegment(seg) {
     .replace(/(^|[^<>=!])=(?!=)/g, "$1==")
     .replace(/\s*(>=|<=|==|!=|>|<|&|\|)\s*/g, " $1 ")
     .replace(/[ \t]+/g, " ");
+}
+
+// SQL-typed date/time literals are valid DuckDB but not R. Convert them to the
+// matching R constructor so the snippet runs as-is. By the time this runs the
+// single-quoted SQL literal has already become a double-quoted R string, so the
+// pattern is e.g. DATE "2014-01-01".
+function convertTypedLiterals(s) {
+  return s
+    .replace(/\bDATE\s+"([^"]*)"/gi, 'as.Date("$1")')
+    .replace(/\bTIMESTAMP\s+"([^"]*)"/gi, 'as.POSIXct("$1", tz = "UTC")')
+    .replace(/\bTIME\s+"([^"]*)"/gi, 'hms::as_hms("$1")');
 }
 
 // Translate the SAS-style free-text filter to a dplyr filter() condition.
@@ -82,7 +95,7 @@ export function dplyrFilterFromExpr(expr) {
     }
   }
   flush();
-  return out.trim();
+  return convertTypedLiterals(out).trim();
 }
 
 // air's default line width: a call wider than this is wrapped one arg per line.
@@ -122,12 +135,14 @@ function verbStep(verb, args) {
 export function dplyrCode(state, dataName) {
   const name = dataName || "data";
   const steps = [];
+  // select() comes first when a column subset is active: the chosen columns
+  // define the view, and it mirrors the order a reader expects.
+  const sel = selectKeys(state);
+  if (sel.length) steps.push(verbStep("select", sel));
   const cond = dplyrFilterFromExpr(state.filterExpr);
   if (cond) steps.push(verbStep("filter", [cond]));
   const ord = arrangeKeys(state.sort);
   if (ord.length) steps.push(verbStep("arrange", ord));
-  const sel = selectKeys(state);
-  if (sel.length) steps.push(verbStep("select", sel));
 
   const pipeline = steps.length ? `${name} |>\n` + steps.join(" |>\n") : name;
   return `library(dplyr)\n\n${pipeline}`;

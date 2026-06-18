@@ -18,10 +18,10 @@ ones that page through a server add a network round-trip to every scroll and
 filter. The usual escape hatch -- show the first 1,000 rows -- quietly hides
 exactly the rows you opened the viewer to find.
 
-`datasetviewer` takes a different route, borrowed from the
-[SAS Studio table viewer](https://documentation.sas.com/doc/en/webeditorcdc/v_001/webeditorug/p1pr6m3i1p7n4nn19f8e8x3yw1xq.htm).
+`datasetviewer` takes a different route, borrowed from
+[SAS Studio](https://www.sas.com/en_us/software/studio.html)'s table viewer.
 The data is sent to the browser **once**, as Parquet, and queried in place
-with [DuckDB-WASM](https://duckdb.org/docs/api/wasm/overview); the grid is
+with [DuckDB-WASM](https://duckdb.org/docs/stable/clients/wasm/overview); the grid is
 drawn on an HTML canvas and only ever materialises the rows you can see. Sort,
 filter, hide a column, jump to the last page -- each is a SQL query over the
 whole dataset that returns in milliseconds, with **no row sampling**. The same

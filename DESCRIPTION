@@ -23,6 +23,8 @@ Imports:
     rlang
 Suggests:
     artoo,
+    dplyr,
+    hms,
     knitr,
     quarto,
     shiny,

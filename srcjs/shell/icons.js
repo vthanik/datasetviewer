@@ -8,12 +8,18 @@ const CAL = `<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
   <path d="M2 6 H14" stroke="currentColor" stroke-width="1.2"/>
   <path d="M5 1.5 V4 M11 1.5 V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`;
 
+const CLOCK = `<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+  <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <path d="M8 4.5 V8 L10.5 9.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 // Resolve the chip from the precise Arrow kind when present, else the coarse
-// SAS type ("Num"/"Char"). The chip's CSS class colour-codes it by type.
+// SAS type ("Num"/"Char"). The chip's CSS class colour-codes it by type:
+// a calendar for date/datetime, a clock for time-of-day, A for char, # for num.
 export function typeIcon(col) {
   const kind = col.kind || (col.type === "Num" ? "number" : "string");
   if (kind === "number") return '<span class="dv-ti dv-ti-num">#</span>';
-  if (kind === "date" || kind === "datetime" || kind === "time")
+  if (kind === "time") return `<span class="dv-ti dv-ti-date">${CLOCK}</span>`;
+  if (kind === "date" || kind === "datetime")
     return `<span class="dv-ti dv-ti-date">${CAL}</span>`;
   return '<span class="dv-ti dv-ti-char">A</span>';
 }

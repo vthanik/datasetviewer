@@ -28,6 +28,45 @@ test('"OR" inside a string value is not translated to |', () => {
   );
 });
 
+test("SQL IN / NOT IN translate to %in% c(...) / !x %in% c(...)", () => {
+  assert.equal(dplyrFilterFromExpr("SITEID in (701, 703)"), "SITEID %in% c(701, 703)");
+  assert.equal(
+    dplyrFilterFromExpr("SITEID not in (701, 703)"),
+    "!SITEID %in% c(701, 703)"
+  );
+});
+
+test("SQL-typed date/time literals become R constructors", () => {
+  assert.equal(
+    dplyrFilterFromExpr("TRTSDT >= DATE '2014-01-01'"),
+    'TRTSDT >= as.Date("2014-01-01")'
+  );
+  assert.equal(
+    dplyrFilterFromExpr("ASTDTM > TIMESTAMP '2022-07-27 12:20:00'"),
+    'ASTDTM > as.POSIXct("2022-07-27 12:20:00", tz = "UTC")'
+  );
+  assert.equal(
+    dplyrFilterFromExpr("ASTTM = TIME '12:20:00'"),
+    'ASTTM == hms::as_hms("12:20:00")'
+  );
+});
+
+test("select() comes first when a column subset is active", () => {
+  const state = {
+    columns: cols(["mpg", "cyl", "hp"], ["mpg", "cyl"]),
+    filterExpr: "cyl = 4",
+    sort: [{ name: "mpg", dir: "desc" }],
+  };
+  assert.equal(
+    dplyrCode(state, "mtcars"),
+    "library(dplyr)\n\n" +
+      "mtcars |>\n" +
+      "  select(mpg, cyl) |>\n" +
+      "  filter(cyl == 4) |>\n" +
+      "  arrange(desc(mpg))"
+  );
+});
+
 test("arrange uses desc() for descending keys", () => {
   assert.equal(
     dplyrArrangeFromSort([{ name: "mpg", dir: "desc" }, { name: "cyl", dir: "asc" }]),
@@ -35,19 +74,19 @@ test("arrange uses desc() for descending keys", () => {
   );
 });
 
-test("full pipeline: filter + arrange + select, library(dplyr) first", () => {
+test("full pipeline: select first, then filter, then arrange", () => {
   const state = {
     columns: cols(["mpg", "cyl", "hp", "wt"], ["mpg", "cyl"]),
-    filterExpr: 'mpg > 20 and cyl = 4',
+    filterExpr: "mpg > 20 and cyl = 4",
     sort: [{ name: "mpg", dir: "desc" }],
   };
   assert.equal(
     dplyrCode(state, "mtcars"),
     "library(dplyr)\n\n" +
       "mtcars |>\n" +
+      "  select(mpg, cyl) |>\n" +
       "  filter(mpg > 20 & cyl == 4) |>\n" +
-      "  arrange(desc(mpg)) |>\n" +
-      "  select(mpg, cyl)"
+      "  arrange(desc(mpg))"
   );
 });
 
