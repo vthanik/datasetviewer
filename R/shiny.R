@@ -47,6 +47,7 @@
 #'   shinyApp(ui, server)
 #' }
 #'
+#' @seealso [`dataset_viewer()`] for the widget these bindings embed.
 #' @name datasetviewer-shiny
 #' @export
 datasetviewerOutput <- function(outputId, width = "100%", height = "500px") {

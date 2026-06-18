@@ -24,6 +24,10 @@ tasks/
 # committed (package installs without Node); only the toolchain is ignored.
 node_modules/
 
+# DuckDB-WASM engine: fetched at install time by configure -> tools/fetch-duckdb.R
+# (~35 MB); never committed. Absent -> the widget loads the engine from the CDN.
+inst/htmlwidgets/duckdb/
+
 # pkgdown build output / installed vignettes
 docs/
 inst/doc/

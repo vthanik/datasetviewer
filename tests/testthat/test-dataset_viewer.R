@@ -17,8 +17,17 @@ test_that(".dv_payload() carries Parquet, column meta, view, name, and counts", 
 
   expect_named(
     p,
-    c("parquet", "columns", "view", "data_name", "n_rows", "n_cols")
+    c(
+      "parquet",
+      "columns",
+      "view",
+      "data_name",
+      "n_rows",
+      "n_cols",
+      "duckdb_local"
+    )
   )
+  expect_type(p$duckdb_local, "logical")
   expect_type(p$parquet, "character")
   expect_equal(p$view, "names")
   expect_equal(p$data_name, "iris")
@@ -76,4 +85,29 @@ test_that(".dv_col_length() is blank for numeric/date and widest bytes for char"
 
 test_that("view argument is validated and carried into the payload", {
   expect_error(dataset_viewer(mtcars, view = "bogus"))
+})
+
+test_that("dataset_viewer() reads a file path through artoo", {
+  skip_if_not_installed("artoo")
+  df <- data.frame(a = 1:3, b = c("x", "y", "z"), stringsAsFactors = FALSE)
+  path <- withr::local_tempfile(fileext = ".parquet")
+  nanoparquet::write_parquet(df, path)
+
+  w <- dataset_viewer(path)
+  expect_s3_class(w, "datasetviewer")
+  expect_equal(w$x$n_rows, 3L)
+  expect_equal(w$x$data_name, "data") # a path literal is not a usable data name
+})
+
+test_that(".dv_read_path() errors when artoo is not installed", {
+  testthat::local_mocked_bindings(
+    requireNamespace = function(...) FALSE,
+    .package = "base"
+  )
+  call <- rlang::current_env()
+  expect_snapshot(.dv_read_path("adsl.parquet", call = call), error = TRUE)
+  expect_error(
+    .dv_read_path("adsl.parquet", call = call),
+    class = "datasetviewer_error_input"
+  )
 })

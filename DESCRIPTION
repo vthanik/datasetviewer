@@ -17,6 +17,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
     cli,
+    htmltools,
     htmlwidgets,
     jsonlite,
     nanoparquet,

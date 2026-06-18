@@ -4,6 +4,17 @@
 #' per-column property metadata. The same widget renders in interactive Shiny
 #' apps and in static HTML documents.
 #'
+#' @details
+#' **Query engine.** The data is sent to the browser once as Parquet and queried
+#' in place with DuckDB-WASM, so filter, sort, and paging run over the whole
+#' dataset with no row sampling. The engine (~35 MB) loads from a CDN by default
+#' but is fetched into the package at install time when reachable, so a Shiny app
+#' can serve it to browsers with no internet at runtime. Set
+#' `options(datasetviewer.use_local_engine = FALSE)` to force the CDN (for small
+#' self-contained HTML). See `vignette("datasetviewer")` for offline and
+#' corporate deployment, including the `DATASETVIEWER_DUCKDB_*` install-time
+#' environment variables.
+#'
 #' @param x *Dataset to view.* `<data.frame | character(1)>`. A data frame, or
 #'   a file path read via [artoo::read_dataset()] (xpt, Dataset-JSON, NDJSON,
 #'   Parquet, RDS). An artoo-conformed frame supplies labels, formats, and
@@ -18,6 +29,29 @@
 #'   `NULL` so htmlwidgets assigns one.
 #'
 #' @return *An htmlwidget.* Print it to render, or use it as a Shiny output.
+#'
+#' @examples
+#' # ---- Example 1: view a plain data frame ----
+#' #
+#' # Wrap any data frame to get the interactive grid. Printing the widget in
+#' # an interactive session or a rendered document shows it; here we inspect
+#' # the payload so the example stays headless and self-contained (printing a
+#' # widget would launch a browser under R CMD check).
+#' viewer <- dataset_viewer(mtcars)
+#' viewer$x$n_rows
+#'
+#' # ---- Example 2: CDISC labels as headers ----
+#' #
+#' # With the sibling artoo package, a CDISC-conformed frame supplies column
+#' # labels, formats, and storage lengths to the property pane and the
+#' # names-versus-labels header toggle. Start on labels with view = "labels".
+#' if (requireNamespace("artoo", quietly = TRUE)) {
+#'   labelled <- dataset_viewer(artoo::cdisc_adsl, view = "labels")
+#'   labelled$x$columns[[1]]$label
+#' }
+#'
+#' @seealso
+#' **Shiny bindings:** [`datasetviewerOutput()`], [`renderDatasetViewer()`].
 #' @export
 dataset_viewer <- function(
   x,
@@ -49,6 +83,10 @@ dataset_viewer <- function(
 
   payload <- .dv_payload(x, view = view, data_name = data_name)
 
+  # Serve the DuckDB-WASM engine from the package when it was fetched at
+  # install (offline / corporate); otherwise the widget uses the CDN.
+  duckdb_dep <- .dv_duckdb_dependency()
+
   htmlwidgets::createWidget(
     name = "datasetviewer",
     x = payload,
@@ -56,6 +94,7 @@ dataset_viewer <- function(
     height = height,
     package = "datasetviewer",
     elementId = elementId,
+    dependencies = if (is.null(duckdb_dep)) NULL else list(duckdb_dep),
     sizingPolicy = htmlwidgets::sizingPolicy(
       defaultWidth = "100%",
       defaultHeight = 500,
@@ -92,6 +131,7 @@ dataset_viewer <- function(
     view = view,
     data_name = data_name,
     n_rows = nrow(x),
-    n_cols = ncol(x)
+    n_cols = ncol(x),
+    duckdb_local = .dv_duckdb_local()
   )
 }

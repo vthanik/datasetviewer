@@ -7,7 +7,8 @@
 ^package\.json$
 ^package-lock\.json$
 ^esbuild\.config\.mjs$
-^tools$
+^tools/build\.R$
+^inst/htmlwidgets/duckdb$
 ^\.local$
 ^CLAUDE\.md$
 ^CLAUDE\.local\.md$

@@ -2,8 +2,9 @@
 // windowed queries as SQL, so the grid pulls only the rows it shows. Scale is
 // bounded by the browser, not by what the grid can hold in the DOM.
 //
-// Bundles are loaded from jsDelivr for now; self-hosting from inst/htmlwidgets
-// (for offline/static docs) is a Stage 9 polish item.
+// The engine is served from the package when fetched at install time (offline
+// / corporate, via configure -> tools/fetch-duckdb.R); otherwise it loads from
+// the jsDelivr CDN. See localBundles() below.
 
 import * as duckdb from "@duckdb/duckdb-wasm";
 import { Type } from "apache-arrow";
@@ -73,9 +74,45 @@ function tableToRows(table, columns) {
   return rows;
 }
 
+// Engine bundle served from the package (offline / corporate) when the wasm
+// was fetched at install time and attached as an htmlwidgets dependency; null
+// otherwise, so the caller falls back to the jsDelivr CDN.
+function localBundles() {
+  const hw = typeof window !== "undefined" ? window.HTMLWidgets : undefined;
+  if (!hw || typeof hw.getAttachmentUrl !== "function") return null;
+  const dep = "datasetviewer-duckdb";
+  // The wasm and worker are loaded inside a Web Worker (a Blob URL origin),
+  // where a relative attachment URL cannot resolve. Make every URL absolute
+  // against the document so the worker fetches the right file.
+  const abs = (u) => (u ? new URL(u, document.baseURI).href : u);
+  let mvpWasm, mvpWorker, ehWasm, ehWorker;
+  try {
+    mvpWasm = abs(hw.getAttachmentUrl(dep, "mvp_wasm"));
+    mvpWorker = abs(hw.getAttachmentUrl(dep, "mvp_worker"));
+    ehWasm = abs(hw.getAttachmentUrl(dep, "eh_wasm"));
+    ehWorker = abs(hw.getAttachmentUrl(dep, "eh_worker"));
+  } catch (e) {
+    return null; // dependency not registered -> use CDN
+  }
+  if (!mvpWasm || !ehWasm) return null;
+  // The parquet extension lives under <bundle dir>/extensions/<ver>/<platform>/;
+  // point DuckDB's extension repository at that base so read_parquet loads it
+  // locally instead of fetching from extensions.duckdb.org.
+  const extRepo = ehWasm.replace(/\/[^/]*$/, "") + "/extensions";
+  return {
+    bundles: {
+      mvp: { mainModule: mvpWasm, mainWorker: mvpWorker },
+      eh: { mainModule: ehWasm, mainWorker: ehWorker },
+    },
+    extRepo,
+  };
+}
+
 export async function createEngine() {
-  const bundles = duckdb.getJsDelivrBundles();
-  const bundle = await duckdb.selectBundle(bundles);
+  const local = localBundles();
+  const bundle = await duckdb.selectBundle(
+    local ? local.bundles : duckdb.getJsDelivrBundles()
+  );
   const workerUrl = URL.createObjectURL(
     new Blob([`importScripts("${bundle.mainWorker}");`], {
       type: "text/javascript",
@@ -86,6 +123,13 @@ export async function createEngine() {
   await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
   URL.revokeObjectURL(workerUrl);
   const conn = await db.connect();
+
+  if (local) {
+    // Load the parquet extension from the package's local repository (offline).
+    await conn.query(
+      `SET custom_extension_repository='${local.extRepo}'`
+    );
+  }
 
   let columns = [];
   let rowCount = 0;

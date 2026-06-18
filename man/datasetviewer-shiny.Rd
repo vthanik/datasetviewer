@@ -66,3 +66,6 @@ if (interactive()) {
 }
 
 }
+\seealso{
+\code{\link[=dataset_viewer]{dataset_viewer()}} for the widget these bindings embed.
+}

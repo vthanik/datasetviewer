@@ -35,6 +35,31 @@ test_that(".dv_meta_from_artoo() reads labels and types from a labelled frame", 
   )))
 })
 
+test_that(".dv_columns_meta() falls back to synth when artoo is unavailable", {
+  testthat::local_mocked_bindings(
+    requireNamespace = function(...) FALSE,
+    .package = "base"
+  )
+  meta <- .dv_columns_meta(
+    data.frame(a = 1:3, b = c("xx", "y", "zzz"), stringsAsFactors = FALSE)
+  )
+  expect_equal(meta[[1]]$type, "Num")
+  expect_equal(meta[[2]]$type, "Char")
+  expect_equal(meta[[2]]$length, "3")
+})
+
+test_that(".dv_col_kind() maps difftime/hms columns to time", {
+  expect_equal(.dv_col_kind(as.difftime(1, units = "hours")), "time")
+})
+
+test_that(".dv_kind_from_artoo() maps SAS display formats to browser kinds", {
+  expect_equal(.dv_kind_from_artoo("Num", "DATETIME20."), "datetime")
+  expect_equal(.dv_kind_from_artoo("Num", "TIME8."), "time")
+  expect_equal(.dv_kind_from_artoo("Num", "DATE9."), "date")
+  expect_equal(.dv_kind_from_artoo("Num", ""), "number") # no format -> from type
+  expect_equal(.dv_kind_from_artoo("Char", ""), "string")
+})
+
 test_that(".dv_blank() collapses NA and non-scalars to empty string", {
   expect_equal(.dv_blank(NA), "")
   expect_equal(.dv_blank(NA_character_), "")

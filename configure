@@ -1,0 +1,7 @@
+#!/bin/sh
+# Runs automatically at install (R CMD INSTALL). Best-effort fetch of the
+# DuckDB-WASM engine into inst/htmlwidgets/duckdb/ -- see tools/fetch-duckdb.R.
+# Never fails the install: if the engine cannot be fetched, the widget loads it
+# from the jsDelivr CDN at runtime instead.
+"${R_HOME}/bin/Rscript" tools/fetch-duckdb.R || true
+exit 0

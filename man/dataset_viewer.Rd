@@ -39,3 +39,38 @@ Renders a fast, scrollable data grid with a column-selection panel and
 per-column property metadata. The same widget renders in interactive Shiny
 apps and in static HTML documents.
 }
+\details{
+\strong{Query engine.} The data is sent to the browser once as Parquet and queried
+in place with DuckDB-WASM, so filter, sort, and paging run over the whole
+dataset with no row sampling. The engine (~35 MB) loads from a CDN by default
+but is fetched into the package at install time when reachable, so a Shiny app
+can serve it to browsers with no internet at runtime. Set
+\code{options(datasetviewer.use_local_engine = FALSE)} to force the CDN (for small
+self-contained HTML). See \code{vignette("datasetviewer")} for offline and
+corporate deployment, including the \verb{DATASETVIEWER_DUCKDB_*} install-time
+environment variables.
+}
+\examples{
+# ---- Example 1: view a plain data frame ----
+#
+# Wrap any data frame to get the interactive grid. Printing the widget in
+# an interactive session or a rendered document shows it; here we inspect
+# the payload so the example stays headless and self-contained (printing a
+# widget would launch a browser under R CMD check).
+viewer <- dataset_viewer(mtcars)
+viewer$x$n_rows
+
+# ---- Example 2: CDISC labels as headers ----
+#
+# With the sibling artoo package, a CDISC-conformed frame supplies column
+# labels, formats, and storage lengths to the property pane and the
+# names-versus-labels header toggle. Start on labels with view = "labels".
+if (requireNamespace("artoo", quietly = TRUE)) {
+  labelled <- dataset_viewer(artoo::cdisc_adsl, view = "labels")
+  labelled$x$columns[[1]]$label
+}
+
+}
+\seealso{
+\strong{Shiny bindings:} \code{\link[=datasetviewerOutput]{datasetviewerOutput()}}, \code{\link[=renderDatasetViewer]{renderDatasetViewer()}}.
+}

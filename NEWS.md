@@ -13,3 +13,15 @@
 * `datasetviewerOutput()` and `renderDatasetViewer()` embed the widget in
   Shiny and publish the current filter, sort, column selection, and view mode
   as inputs.
+* The "Show code" toolbar button emits the runnable, air-formatted `dplyr`
+  pipeline (select, filter, arrange, with SQL-to-R translation) that reproduces
+  the current view.
+* The DuckDB-WASM engine loads from a CDN by default and is fetched into the
+  package at install time when reachable, so a Shiny app can serve it to
+  browsers with no internet at runtime (offline / corporate deployment). The
+  install-time fetch honours `DATASETVIEWER_DUCKDB_DIR`,
+  `DATASETVIEWER_DUCKDB_URL`, `DATASETVIEWER_DUCKDB_EXT_URL`, and
+  `DATASETVIEWER_DUCKDB_OFFLINE`; the install never fails if the engine cannot
+  be fetched (it falls back to the CDN at runtime).
+* `options(datasetviewer.use_local_engine = FALSE)` forces the CDN even when
+  the engine is present locally, keeping self-contained HTML documents small.

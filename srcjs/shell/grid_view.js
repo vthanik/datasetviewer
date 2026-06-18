@@ -293,11 +293,12 @@ function Grid({
           onHeaderContextMenu,
           onCellContextMenu,
           onColumnResize,
-          rowMarkers: "number", // plain row numbers, no checkbox (matches SAS)
+          rowMarkers: "clickable-number", // row numbers; click one to select the row
           rowHeight: ROW_H,
           headerHeight: HEADER_H,
           gridSelection: selection,
           onGridSelectionChange: setSelection,
+          rowSelect: "single", // one row at a time, no multi-select
           rowSelectionMode: "single",
           smoothScrollX: true,
           smoothScrollY: true,

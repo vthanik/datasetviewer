@@ -10,6 +10,10 @@ format: html
 ```{r}
 #| include: false
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+# This is a self-contained HTML document, so every htmlwidget dependency is
+# embedded. Load the DuckDB-WASM engine from the CDN (a small script reference)
+# rather than embedding the ~80 MB local engine bundle into the page.
+options(datasetviewer.use_local_engine = FALSE)
 ```
 
 Looking at a dataset should not mean choosing between *fast* and *complete*.
@@ -52,8 +56,10 @@ at home:
 - **Property pane** (lower left) — select a column to inspect its `Label`,
   `Name`, `Length`, `Type`, `Format`, and `Informat`, the same attributes
   `PROC CONTENTS` reports.
-- **View toggle** (toolbar) — switch the header row between variable
-  **names** and **labels**.
+- **Toolbar** (top) — the names-versus-labels **View** dropdown, an
+  **Export current view to CSV** button, a **Show code** button (`<>`) that
+  reveals the dplyr pipeline for the current view, and **Filter table rows**
+  (the funnel) with a badge showing the active filter.
 - **Header menu** — right-click any column header to sort ascending or
   descending, add a filter, copy the column, or size the columns to content.
 - **Status bar** — the total row and column counts, and the filtered count
@@ -106,6 +112,36 @@ There are two ways to filter, both operating over every row:
 Because the filter runs in DuckDB over the full Parquet payload, the answer is
 exact — the matched count is the true count, not a count within a sampled
 window.
+
+## Reproducing the view as code
+
+Exploration in the grid is convenient, but a report needs to be reproducible.
+The **Show code** button (`<>` in the toolbar) opens a dialog with the runnable
+[`dplyr`](https://dplyr.tidyverse.org/) pipeline that reproduces the current
+view — the column selection, the filter, and the sort, in order:
+
+```r
+mtcars |>
+  dplyr::select(cyl, hp, wt, mpg) |>
+  dplyr::filter(mpg >= 20) |>
+  dplyr::arrange(dplyr::desc(hp))
+```
+
+The snippet is air-formatted and syntax-highlighted, with a **Copy** button.
+SQL idioms are translated to their R equivalents — `IN (...)` becomes
+`%in% c(...)`, `NOT IN` becomes `!x %in% c(...)`, and date or time literals
+become `as.Date()` / `as.POSIXct()` / `hms::as_hms()` — so the code runs as-is
+against the source frame. It is modelled on SAS Studio's "show the code that
+creates this table", and it stays in sync with the view: change the filter or
+sort and reopen it to see the updated pipeline.
+
+## Exporting the current view
+
+The **Export current view to CSV** toolbar button downloads exactly what you
+are looking at — the visible columns, the active filter, and the current sort,
+over **every** matching row, not just the visible window. The export streams
+from the engine in row chunks, so it does not depend on the dataset fitting in
+memory in one piece.
 
 ## Built for scale: no row sampling
 
@@ -162,10 +198,68 @@ shinyApp(ui, server)
 ## Static HTML and Quarto
 
 No server is required for the static case — this very vignette embeds live
-widgets. Drop `dataset_viewer()` into any R Markdown or Quarto document and
-the result is a self-contained, fully interactive grid that works offline once
-loaded. The same call you would write in a Shiny app produces the same viewer
-here.
+widgets. Drop `dataset_viewer()` into any R Markdown or Quarto document and the
+result is a fully interactive grid. The same call you would write in a Shiny
+app produces the same viewer here.
+
+## The query engine: online by default, offline when you need it
+
+Everything except one piece is bundled in the package and works with no
+internet: the canvas grid, the column panel, the filters, the code view, the
+CSV export, and your data (carried in the page as Parquet). The one piece is
+the **DuckDB-WASM query engine** — the in-browser database that answers every
+filter, sort, and page. It is roughly 35 MB, far too large to ship inside an R
+package, so by default the widget loads it from a public CDN
+([jsDelivr](https://www.jsdelivr.com/)) the first time a grid is rendered. For
+interactive use on a connected machine, nothing more is needed.
+
+### Self-hosting the engine for offline and corporate use
+
+When the browser cannot reach the CDN — an air-gapped laptop, or a corporate
+Shiny server behind a firewall — the engine must be served locally. This works
+the same way the [`arrow`](https://arrow.apache.org/docs/r/) package acquires
+its C++ library: **at install time**, with no function for you to call.
+
+When you install `datasetviewer`, an install step fetches the engine (and the
+parquet extension DuckDB needs to read the payload) into the package. From then
+on, a Shiny app **serves the engine from the package to the browser** — no
+internet at runtime. If the install machine cannot reach the public host, the
+step is skipped and the widget simply falls back to the CDN; the install never
+fails.
+
+The fetch is steered with environment variables, set before
+`install.packages("datasetviewer")` (the analogues of `arrow`'s
+`LIBARROW_BINARY`):
+
+| Variable | Effect |
+|---|---|
+| `DATASETVIEWER_DUCKDB_DIR` | Copy the engine from a pre-staged directory instead of downloading — for a fully air-gapped install. |
+| `DATASETVIEWER_DUCKDB_URL` | Base URL of an internal mirror of the engine files. |
+| `DATASETVIEWER_DUCKDB_EXT_URL` | Base URL of an internal mirror of the DuckDB extension repository. |
+| `DATASETVIEWER_DUCKDB_OFFLINE` | Set to `true` to skip the fetch and always use the CDN. |
+
+A typical corporate deployment installs the package the same way it installs
+any other (often through an internal mirror that already carries `arrow`),
+points these variables at the in-house mirror if the public host is blocked,
+and then runs the Shiny app — which serves the engine to every user's browser
+with no outbound connection.
+
+### Static documents and the engine
+
+A self-contained HTML document (a Quarto or R Markdown report, or
+`htmlwidgets::saveWidget(selfcontained = TRUE)`) embeds **every** dependency in
+the file. Embedding the 35 MB engine there would produce an enormous page, so
+static documents should load the engine from the CDN instead. Set this option
+once, in a setup chunk, before any `dataset_viewer()` call:
+
+```{r}
+#| eval: false
+options(datasetviewer.use_local_engine = FALSE)
+```
+
+That keeps the document small while the grid loads the engine from the CDN when
+a reader opens it. (This vignette does exactly that.) Leave the option at its
+default for Shiny, where the engine is served rather than embedded.
 
 ## Where to next
 

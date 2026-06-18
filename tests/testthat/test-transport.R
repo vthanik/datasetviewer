@@ -24,6 +24,19 @@ test_that(".dv_to_parquet_b64() yields decodable base64", {
   expect_gt(length(raw), 0L)
 })
 
+test_that(".dv_to_parquet_raw() aborts when serialization yields no bytes", {
+  # Force an empty Parquet file so the size guard fires.
+  testthat::local_mocked_bindings(
+    write_parquet = function(x, file, ...) file.create(file),
+    .package = "nanoparquet"
+  )
+  expect_snapshot(.dv_to_parquet_raw(data.frame(a = 1)), error = TRUE)
+  expect_error(
+    .dv_to_parquet_raw(data.frame(a = 1)),
+    class = "datasetviewer_error_transport"
+  )
+})
+
 test_that("Parquet transport beats JSON on a non-trivial frame", {
   # Parquet's fixed footer overhead loses on tiny data; the win is at scale.
   set.seed(1)
