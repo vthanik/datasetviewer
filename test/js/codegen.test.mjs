@@ -51,6 +51,22 @@ test("SQL-typed date/time literals become R constructors", () => {
   );
 });
 
+test("column names in the filter are canonicalised to real case", () => {
+  // R is case-sensitive; a lowercase 'siteid' must become 'SITEID' to run.
+  const state = {
+    columns: [
+      { name: "SITEID", origIndex: 0, selected: true },
+      { name: "ARM", origIndex: 1, selected: true },
+    ],
+    filterExpr: 'siteid = "703"',
+    sort: [],
+  };
+  assert.equal(
+    dplyrCode(state, "d"),
+    'library(dplyr)\n\nd |>\n  filter(SITEID == "703")'
+  );
+});
+
 test("select() comes first when a column subset is active", () => {
   const state = {
     columns: cols(["mpg", "cyl", "hp"], ["mpg", "cyl"]),

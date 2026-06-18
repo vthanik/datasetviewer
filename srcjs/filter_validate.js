@@ -71,7 +71,7 @@ function tokenize(s) {
   return toks;
 }
 
-function checkValue(col, kind, val) {
+function checkValue(col, kind, val, isColumn) {
   if (kind === "number" && val.t === "str") {
     const inner = val.v.slice(1, -1);
     const ex = /^-?\d+(\.\d+)?$/.test(inner) ? inner : "0";
@@ -81,42 +81,59 @@ function checkValue(col, kind, val) {
     e.userFacing = true;
     throw e;
   }
-  if ((kind === "string" || kind === "bool") && val.t === "num") {
-    const e = new Error(
-      `"${col}" is character. Quote the value, for example ${col} = "${val.v}".`
-    );
-    e.userFacing = true;
-    throw e;
+  if (kind === "string" || kind === "bool") {
+    // A number, or an unquoted bareword that is not itself a column, is an
+    // unquoted character value -- DuckDB would read a bareword as a column ref
+    // and fail with a cryptic "column not found", so catch it here with a
+    // clear message.
+    if (val.t === "num" || (val.t === "id" && !isColumn(val.v))) {
+      const e = new Error(
+        `"${col}" is character. Quote the value, for example ${col} = "${val.v}".`
+      );
+      e.userFacing = true;
+      throw e;
+    }
   }
 }
 
-function checkInList(col, kind, toks, start) {
+function checkInList(col, kind, toks, start, isColumn) {
   // toks[start] should be "(": validate each literal up to the matching ")".
   if (!toks[start] || toks[start].t !== "lp") return;
   for (let m = start + 1; m < toks.length && toks[m].t !== "rp"; m++) {
-    if (toks[m].t === "str" || toks[m].t === "num") checkValue(col, kind, toks[m]);
+    if (["str", "num", "id"].includes(toks[m].t)) {
+      checkValue(col, kind, toks[m], isColumn);
+    }
   }
 }
 
 // Throw a user-facing Error on the first clear type violation; return otherwise.
+// Column lookups are case-insensitive (DuckDB folds unquoted identifiers).
 export function validateFilterTypes(expr, kindMap) {
   if (!expr || !kindMap) return;
+  const kinds = {};
+  for (const k in kindMap) kinds[k.toLowerCase()] = kindMap[k];
+  const kindOf = (name) => kinds[name.toLowerCase()];
+  const isColumn = (name) =>
+    Object.prototype.hasOwnProperty.call(kinds, name.toLowerCase());
+
   const toks = tokenize(String(expr));
   for (let k = 0; k < toks.length; k++) {
     const t = toks[k];
     if (t.t !== "id") continue;
-    const kind = kindMap[t.v];
+    const kind = kindOf(t.v);
     if (kind !== "number" && kind !== "string" && kind !== "bool") continue;
 
     const next = toks[k + 1];
     if (!next) continue;
     if (next.t === "op") {
-      if (toks[k + 2]) checkValue(t.v, kind, toks[k + 2]);
+      if (toks[k + 2]) checkValue(t.v, kind, toks[k + 2], isColumn);
     } else if (next.t === "kw" && next.v === "in") {
-      checkInList(t.v, kind, toks, k + 2);
+      checkInList(t.v, kind, toks, k + 2, isColumn);
     } else if (next.t === "kw" && next.v === "not") {
       const inTok = toks[k + 2];
-      if (inTok && inTok.t === "kw" && inTok.v === "in") checkInList(t.v, kind, toks, k + 3);
+      if (inTok && inTok.t === "kw" && inTok.v === "in") {
+        checkInList(t.v, kind, toks, k + 3, isColumn);
+      }
     }
   }
 }

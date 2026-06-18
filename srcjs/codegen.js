@@ -12,8 +12,8 @@ function bt(name) {
 // free-text dialect to R: and/or/not to &/|/!, <> to !=, and a lone "=" to
 // "==" (leaving >=, <=, !=, == intact). Operator spacing is normalised to a
 // single space on each side, matching air's formatting convention.
-function translateSegment(seg) {
-  return seg
+function translateSegment(seg, canon) {
+  let t = seg
     .replace(/([A-Za-z.][\w.]*)\s+not\s+in\s*\(/gi, "!$1 %in% c(") // NOT IN (..)
     .replace(/\bin\s*\(/gi, "%in% c(") // SQL IN (...) -> R %in% c(...)
     .replace(/<>/g, "!=")
@@ -23,6 +23,15 @@ function translateSegment(seg) {
     .replace(/(^|[^<>=!])=(?!=)/g, "$1==")
     .replace(/\s*(>=|<=|==|!=|>|<|&|\|)\s*/g, " $1 ")
     .replace(/[ \t]+/g, " ");
+  // Canonicalise column names to their real case (R is case-sensitive, the
+  // engine is not). Identifiers followed by "(" are function calls, not columns.
+  if (canon) {
+    t = t.replace(
+      /\b([A-Za-z_.][\w.]*)\b(?!\s*\()/g,
+      (m, w) => canon[w.toLowerCase()] || m
+    );
+  }
+  return t;
 }
 
 // SQL-typed date/time literals are valid DuckDB but not R. Convert them to the
@@ -40,14 +49,14 @@ function convertTypedLiterals(s) {
 // Double-quoted runs are copied verbatim (so a value like
 // "AMERICAN INDIAN OR ALASKA NATIVE" keeps its "OR"); single-quoted runs become
 // double-quoted R strings; everything outside strings is operator-translated.
-export function dplyrFilterFromExpr(expr) {
+export function dplyrFilterFromExpr(expr, canon) {
   if (!expr || !String(expr).trim()) return "";
   const s = String(expr).trim();
   let out = "";
   let seg = "";
   let i = 0;
   const flush = () => {
-    out += translateSegment(seg);
+    out += translateSegment(seg, canon);
     seg = "";
   };
   while (i < s.length) {
@@ -134,12 +143,17 @@ function verbStep(verb, args) {
 // and formatted to air's conventions.
 export function dplyrCode(state, dataName) {
   const name = dataName || "data";
+  // Lower-cased -> canonical column name, so a case-insensitive filter (the
+  // engine folds case) generates case-correct R (R does not).
+  const canon = {};
+  (state.columns || []).forEach((c) => (canon[c.name.toLowerCase()] = c.name));
+
   const steps = [];
   // select() comes first when a column subset is active: the chosen columns
   // define the view, and it mirrors the order a reader expects.
   const sel = selectKeys(state);
   if (sel.length) steps.push(verbStep("select", sel));
-  const cond = dplyrFilterFromExpr(state.filterExpr);
+  const cond = dplyrFilterFromExpr(state.filterExpr, canon);
   if (cond) steps.push(verbStep("filter", [cond]));
   const ord = arrangeKeys(state.sort);
   if (ord.length) steps.push(verbStep("arrange", ord));

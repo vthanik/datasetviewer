@@ -7,6 +7,7 @@ const KINDS = {
   TRT01AN: "number",
   SEX: "string",
   SITEID: "string",
+  ARM: "string",
   SAFFL: "bool",
 };
 
@@ -36,6 +37,16 @@ test("IN / NOT IN lists are validated element by element", () => {
 test("unknown columns and column-vs-column are not flagged (conservative)", () => {
   assert.doesNotThrow(() => ok('UNKNOWNCOL = "x"'));
   assert.doesNotThrow(() => ok("AGE = TRT01AN")); // both columns, no literal
+});
+
+test("column lookup is case-insensitive (siteid matches SITEID)", () => {
+  assert.throws(throws("siteid = 703"), /siteid.*character.*Quote the value/);
+  assert.doesNotThrow(() => ok('siteid = "703"'));
+});
+
+test("unquoted character value (a bareword, not a column) is rejected", () => {
+  assert.throws(throws("arm = Placebo"), /arm.*character.*Quote the value/);
+  assert.doesNotThrow(() => ok('arm = "Placebo"'));
 });
 
 test("no kind map -> no validation", () => {
