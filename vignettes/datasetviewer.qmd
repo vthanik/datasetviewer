@@ -1,0 +1,65 @@
+---
+title: "Getting started with datasetviewer"
+vignette: >
+  %\VignetteIndexEntry{Getting started with datasetviewer}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+format: html
+---
+
+```{r}
+#| include: false
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+`datasetviewer` renders a dataset in a fast, scrollable grid modelled on the
+SAS Studio table viewer: a column-selection panel, a per-column property
+pane (Label, Name, Length, Type, Format, Informat), a names-versus-labels
+header toggle, header-driven sort, and a free-text row filter. The same
+widget runs in interactive Shiny apps and in static HTML documents.
+
+The data is sent to the browser as Parquet and queried in place with
+DuckDB-WASM, so filtering, sorting, and scrolling stay fast on large
+datasets without sampling rows.
+
+## A plain data frame
+
+```{r}
+library(datasetviewer)
+dataset_viewer(mtcars)
+```
+
+Right-click a column header to sort or add a filter. Click the funnel in the
+toolbar to edit the filter expression directly, for example `mpg > 20 and
+cyl == 4`.
+
+## Column metadata and labels
+
+When the `artoo` package is installed, column metadata (labels, formats,
+informats, storage lengths) is read from a labelled or artoo-conformed
+frame and shown in the property pane. Switch the **View** dropdown to
+*Column labels* to use labels as headers.
+
+```{r}
+#| eval: false
+library(artoo)
+adsl <- read_dataset("adsl.parquet")
+dataset_viewer(adsl, view = "labels")
+```
+
+## In Shiny
+
+`datasetviewerOutput()` and `renderDatasetViewer()` embed the widget, and the
+current filter, sort, and column selection are published back as inputs
+(`input$<id>_filter`, `input$<id>_sort`, `input$<id>_columns`,
+`input$<id>_view`) so the app can reuse them server-side.
+
+```{r}
+#| eval: false
+library(shiny)
+ui <- fluidPage(datasetviewerOutput("viewer", height = "500px"))
+server <- function(input, output, session) {
+  output$viewer <- renderDatasetViewer(dataset_viewer(mtcars))
+}
+shinyApp(ui, server)
+```

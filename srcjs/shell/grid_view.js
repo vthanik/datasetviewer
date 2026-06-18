@@ -1,0 +1,330 @@
+// Glide Data Grid host, backed by the async engine and driven by the store.
+// Renders only the selected columns under the current view mode, applies the
+// current filter expression and sort as SQL, and serves cells from a row-window
+// cache. When the filter or sort changes the cache is cleared, the row count
+// recomputed, and the visible window refetched. Scroll cost stays independent
+// of dataset size.
+
+import React from "react";
+import { createRoot } from "react-dom/client";
+import {
+  DataEditor,
+  GridCellKind,
+  CompactSelection,
+} from "@glideapps/glide-data-grid";
+import "@glideapps/glide-data-grid/dist/index.css";
+
+import { cellText } from "../grid_cells.js";
+import { headerText } from "../state.js";
+import { whereFromExpr, orderFromSort } from "../sql.js";
+
+const { useRef, useState, useEffect, useCallback, useMemo } = React;
+
+const COL_WIDTH = 140;
+const PREFETCH = 50;
+const FIRST_PAGE = 120;
+const ROW_H = 29;
+const HEADER_H = 34;
+const HSCROLL_PAD = 18; // leave room for the horizontal scrollbar
+
+// Canvas theme matching the shell stylesheet, which mirrors the Loom clinical
+// theme: a muted slate-blue accent on neutral grays. The font stays the system
+// sans stack (NOT monospace) -- this grid lives inside a Shiny data explorer.
+// Keep these hexes in sync with the :root tokens in styles.css.
+const GRID_THEME = {
+  fontFamily:
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  baseFontStyle: "12px",
+  headerFontStyle: "600 12px",
+  accentColor: "#4a6fa5",
+  accentLight: "rgba(74, 111, 165, 0.12)",
+  textDark: "#1a1d23",
+  textMedium: "#4b5563",
+  textLight: "#6b7280",
+  textHeader: "#1a1d23",
+  bgCell: "#ffffff",
+  bgCellMedium: "#f7f8fa",
+  bgHeader: "#f7f8fa",
+  bgHeaderHovered: "#eef0f3",
+  bgHeaderHasFocus: "#eef0f3",
+  bgBubble: "#ffffff",
+  borderColor: "#eceef2",
+  horizontalBorderColor: "#eceef2",
+  drilldownBorder: "#e2e5ea",
+  linkColor: "#4a6fa5",
+  bgIconHeader: "#4b5563",
+  fgIconHeader: "#f7f8fa",
+  textHeaderSelected: "#ffffff",
+  cellHorizontalPadding: 10,
+};
+
+function ensurePortal() {
+  if (!document.getElementById("datasetviewer-portal")) {
+    const portal = document.createElement("div");
+    portal.id = "datasetviewer-portal";
+    document.body.appendChild(portal);
+  }
+}
+
+function Grid({
+  engine,
+  store,
+  initialRowCount,
+  onRange,
+  scrollApi,
+  gridApi,
+  onHeaderMenu,
+  onCellMenu,
+  onCount,
+}) {
+  const ref = useRef(null);
+  const wrapRef = useRef(null);
+  const cache = useRef(new Map());
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [snap, setSnap] = useState(store.get());
+  const [rowCount, setRowCount] = useState(initialRowCount);
+  const [colWidths, setColWidths] = useState({}); // name -> px
+  const [selection, setSelection] = useState({
+    columns: CompactSelection.empty(),
+    rows: CompactSelection.empty(),
+  });
+
+  useEffect(() => store.subscribe(setSnap), [store]);
+
+  const where = useMemo(() => whereFromExpr(snap.filterExpr), [snap.filterExpr]);
+  const order = useMemo(() => orderFromSort(snap.sort), [snap.sort]);
+
+  const clausesRef = useRef({ where, order });
+  clausesRef.current = { where, order };
+
+  const visible = useMemo(
+    () => snap.columns.filter((c) => c.selected),
+    [snap.columns]
+  );
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
+
+  const fetchWindow = useCallback(
+    (offset, limit) => {
+      const { where: w, order: o } = clausesRef.current;
+      engine
+        .query({ offset, limit, where: w, order: o })
+        .then((rows) => {
+          rows.forEach((rowArr, i) => cache.current.set(offset + i, rowArr));
+          const cols = visibleRef.current.length;
+          const damage = [];
+          for (let r = 0; r < rows.length; r++) {
+            for (let c = 0; c < cols; c++) damage.push({ cell: [c, offset + r] });
+          }
+          ref.current?.updateCells(damage);
+        })
+        .catch(() => {});
+    },
+    [engine]
+  );
+
+  // Filter/sort change: invalidate cache, recount, jump to top, refetch.
+  useEffect(() => {
+    let cancelled = false;
+    cache.current.clear();
+    engine
+      .count(where)
+      .then((n) => {
+        if (cancelled) return;
+        setRowCount(n);
+        if (onCount) onCount(n);
+        ref.current?.scrollTo(0, 0);
+        fetchWindow(0, FIRST_PAGE);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [where, order, engine, fetchWindow]);
+
+  useEffect(() => {
+    const node = wrapRef.current;
+    if (!node) return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const rect = entries[0].contentRect;
+      setSize({ width: Math.floor(rect.width), height: Math.floor(rect.height) });
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!scrollApi) return undefined;
+    scrollApi.scrollToRow = (row) => ref.current?.scrollTo(0, row, "vertical");
+    return () => {
+      scrollApi.scrollToRow = undefined;
+    };
+  });
+
+  // Column-width controls used by the header context menu.
+  useEffect(() => {
+    if (!gridApi) return undefined;
+    gridApi.sizeToContent = () => {
+      const widths = {};
+      visibleRef.current.forEach((c, ci) => {
+        let max = String(headerText(c, store.get().view)).length;
+        cache.current.forEach((row) => {
+          const v = row[c.origIndex];
+          const len = v === null || v === undefined ? 0 : String(v).length;
+          if (len > max) max = len;
+        });
+        widths[c.name] = Math.min(420, Math.max(60, max * 8 + 28));
+      });
+      setColWidths((w) => ({ ...w, ...widths }));
+    };
+    gridApi.restoreWidths = () => setColWidths({});
+    return undefined;
+  });
+
+  const gridColumns = useMemo(
+    () =>
+      visible.map((c) => ({
+        title: headerText(c, snap.view),
+        id: c.name,
+        width: colWidths[c.name] || COL_WIDTH,
+      })),
+    [visible, snap.view, colWidths]
+  );
+
+  const onColumnResize = useCallback((column, newSize) => {
+    setColWidths((w) => ({ ...w, [column.id]: newSize }));
+  }, []);
+
+  const getCellContent = useCallback(
+    (cell) => {
+      const [col, row] = cell;
+      const meta = visible[col];
+      const cached = cache.current.get(row);
+      if (cached === undefined) {
+        return { kind: GridCellKind.Loading, allowOverlay: false };
+      }
+      const text = cellText(cached[meta.origIndex]);
+      return {
+        kind: GridCellKind.Text,
+        data: text,
+        displayData: text,
+        allowOverlay: false,
+        contentAlign: meta.type === "Num" ? "right" : "left",
+      };
+    },
+    [visible]
+  );
+
+  const onVisibleRegionChanged = useCallback(
+    (range) => {
+      if (onRange) onRange(range.y, Math.min(rowCount, range.y + range.height));
+      const start = Math.max(0, range.y - PREFETCH);
+      const end = Math.min(rowCount, range.y + range.height + PREFETCH);
+      let first = -1;
+      let last = -1;
+      for (let r = start; r < end; r++) {
+        if (!cache.current.has(r)) {
+          if (first === -1) first = r;
+          last = r;
+        }
+      }
+      if (first === -1) return;
+      fetchWindow(first, last - first + 1);
+    },
+    [rowCount, onRange, fetchWindow]
+  );
+
+  const onHeaderContextMenu = useCallback(
+    (colIndex, event) => {
+      if (event.preventDefault) event.preventDefault();
+      // Highlight the whole column.
+      setSelection({
+        columns: CompactSelection.fromSingleSelection(colIndex),
+        rows: CompactSelection.empty(),
+      });
+      if (onHeaderMenu) onHeaderMenu(visible[colIndex], event.bounds);
+    },
+    [visible, onHeaderMenu]
+  );
+
+  const onCellContextMenu = useCallback(
+    (cell, event) => {
+      if (event.preventDefault) event.preventDefault();
+      const [col, row] = cell;
+      const cached = cache.current.get(row);
+      if (col < 0) {
+        // Row number (marker): highlight the whole row, offer Copy Row.
+        setSelection({
+          rows: CompactSelection.fromSingleSelection(row),
+          columns: CompactSelection.empty(),
+        });
+        const rowVals = cached
+          ? visible.map((m) => cellText(cached[m.origIndex]))
+          : [];
+        if (onCellMenu) onCellMenu({ rowVals, isMarker: true }, event.bounds);
+      } else {
+        const value = cached ? cellText(cached[visible[col].origIndex]) : "";
+        if (onCellMenu) onCellMenu({ value, isMarker: false }, event.bounds);
+      }
+    },
+    [visible, onCellMenu]
+  );
+
+  // When the rows do not fill the viewport, size the grid to its content so the
+  // area below the last row is blank (no trailing empty grid lines), matching
+  // SAS Studio. When they overflow, fill the container and scroll. Only reserve
+  // room for the horizontal scrollbar when the columns actually overflow.
+  const totalColsWidth =
+    visible.reduce((s, c) => s + (colWidths[c.name] || COL_WIDTH), 0) + 60;
+  const hOverflow = totalColsWidth > size.width;
+  const contentHeight = HEADER_H + rowCount * ROW_H + (hOverflow ? HSCROLL_PAD : 0);
+  const gridHeight = Math.min(size.height, contentHeight);
+
+  const editor =
+    size.width > 0 && size.height > 0
+      ? React.createElement(DataEditor, {
+          ref,
+          theme: GRID_THEME,
+          columns: gridColumns,
+          rows: rowCount,
+          getCellContent,
+          onVisibleRegionChanged,
+          onHeaderContextMenu,
+          onCellContextMenu,
+          onColumnResize,
+          rowMarkers: "clickable-number",
+          rowHeight: ROW_H,
+          headerHeight: HEADER_H,
+          gridSelection: selection,
+          onGridSelectionChange: setSelection,
+          rowSelectionMode: "single",
+          smoothScrollX: true,
+          smoothScrollY: true,
+          width: size.width,
+          height: gridHeight,
+        })
+      : null;
+
+  // Inner wrapper sized to the grid; its bottom border draws the rule under
+  // the last row (Glide only draws separators between rows, not below the last).
+  return React.createElement(
+    "div",
+    { ref: wrapRef, className: "datasetviewer-gridfill" },
+    React.createElement(
+      "div",
+      { className: "dv-grid-inner", style: { height: `${gridHeight}px` } },
+      editor
+    )
+  );
+}
+
+export function createGrid(container, opts) {
+  ensurePortal();
+  const root = createRoot(container);
+  root.render(React.createElement(Grid, opts));
+  return {
+    destroy() {
+      root.unmount();
+    },
+  };
+}

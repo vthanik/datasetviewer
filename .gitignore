@@ -1,0 +1,46 @@
+# Local-only Claude Code / dev docs (never pushed to the remote).
+# CLAUDE.md is the one tracked Claude file; everything else here is local.
+CLAUDE.local.md
+MEMORY.md
+design.md
+build.md
+debugging.md
+[Hh]andoff*.md
+HANDOFF*.md
+tasks/
+.local/
+
+# Claude Code local harness state (settings, schedule locks)
+.claude/
+
+# R session/state
+*.Rproj
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Node / JS toolchain. The bundled inst/htmlwidgets/datasetviewer.js IS
+# committed (package installs without Node); only the toolchain is ignored.
+node_modules/
+
+# pkgdown build output / installed vignettes
+docs/
+inst/doc/
+
+# Quarto render cache + per-vignette render artefacts (vignettes are .qmd)
+.quarto/
+*.quarto_ipynb
+vignettes/**/*_files/
+vignettes/*.html
+vignettes/articles/*.html
+
+# data-raw transient
+data-raw/cache/
+
+# testthat per-test scratch / failure-report artefacts
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds
+
+# macOS
+.DS_Store

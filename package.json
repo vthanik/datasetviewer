@@ -1,0 +1,23 @@
+{
+  "name": "datasetviewer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "JS sources for the datasetviewer R package htmlwidget.",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "test": "node --test test/js/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright": "^1.61.0"
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.33.1-dev45.0",
+    "@glideapps/glide-data-grid": "^6.0.3",
+    "apache-arrow": "^21.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

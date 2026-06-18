@@ -1,0 +1,946 @@
+/* datasetviewer shell -- "typed-data instrument" visual identity.
+   The chrome carries the personality (cool stone paper, a single pine-teal
+   signal accent, uppercase tracked micro-labels); the data canvas stays
+   disciplined. Column identifiers and values render in monospace because a
+   variable name (USUBJID, TRT01PN) is a code token, not prose. Each column
+   type gets a quiet colour chip so the columns panel reads as a schema map. */
+
+/* Palette tokens live on :root, not .datasetviewer-root, because the context
+   menu and the calendar popup are appended to document.body (outside the
+   widget root) -- they must still resolve these variables.
+
+   These mirror the Loom clinical theme (sibling app, _archive): a muted
+   slate-blue accent and neutral grays, with per-type colour badges
+   (char -> blue, num -> violet, date -> amber). The web fonts Loom loads from
+   a CDN are intentionally NOT used here -- datasetviewer must render offline /
+   self-contained (Quarto, CRAN), so it stays on the system stacks. */
+:root {
+  --dv-ink: #1a1d23;
+  --dv-ink-2: #4b5563;
+  --dv-ink-3: #6b7280;
+  --dv-paper: #f7f8fa;
+  --dv-paper-2: #eef0f3;
+  --dv-canvas: #ffffff;
+  --dv-rule: #e2e5ea;
+  --dv-rule-2: #eceef2;
+  --dv-signal: #4a6fa5;
+  --dv-signal-hover: #3d5f8f;
+  --dv-signal-weak: rgba(74, 111, 165, 0.12);
+  --dv-char-fg: #0369a1;
+  --dv-char-bg: #e0f2fe;
+  --dv-num-fg: #6d28d9;
+  --dv-num-bg: #ede9fe;
+  --dv-date-fg: #92400e;
+  --dv-date-bg: #fef3c7;
+  --dv-danger: #dc2626;
+
+  --dv-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --dv-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.datasetviewer-root {
+  font-family: var(--dv-sans);
+  font-size: 13px;
+  color: var(--dv-ink);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--dv-canvas);
+  position: relative;
+}
+
+.datasetviewer-root *:focus-visible {
+  outline: 2px solid var(--dv-signal);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.datasetviewer-root input[type="checkbox"] {
+  accent-color: var(--dv-signal);
+}
+
+/* The uppercase tracked micro-label register -- the chrome's voice. */
+.dv-tb-label,
+.dv-cols-title {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--dv-ink-2);
+}
+
+/* ---- Toolbar ---------------------------------------------------------- */
+.dv-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background: var(--dv-paper);
+  border-bottom: 1px solid var(--dv-rule);
+  flex: 0 0 auto;
+  min-height: 38px;
+}
+
+.dv-tb-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dv-view-select {
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  padding: 3px 7px;
+  border: 1px solid var(--dv-rule);
+  border-radius: 5px;
+  background: var(--dv-canvas);
+  color: var(--dv-ink);
+  min-width: 150px;
+}
+
+.dv-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dv-ink-2);
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.dv-icon-btn:hover {
+  background: var(--dv-paper-2);
+  border-color: var(--dv-rule);
+}
+
+.dv-tb-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--dv-rule);
+  margin: 0 2px;
+}
+
+.dv-tb-pager {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dv-pager-btn {
+  color: var(--dv-signal);
+}
+
+.dv-range {
+  font-size: 12px;
+  color: var(--dv-ink-2);
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+/* ---- Body: sidebar + main ------------------------------------------- */
+.dv-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dv-sidebar {
+  flex: 0 0 250px;
+  display: flex;
+  flex-direction: column;
+  background: var(--dv-paper);
+  border-right: 1px solid var(--dv-rule);
+  min-height: 0;
+}
+
+.dv-resizer {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: transparent;
+}
+.dv-resizer:hover {
+  background: var(--dv-signal);
+  opacity: 0.4;
+}
+
+.dv-reopen {
+  flex: 0 0 26px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 9px;
+  background: var(--dv-paper);
+  border-right: 1px solid var(--dv-rule);
+  color: var(--dv-signal);
+  cursor: pointer;
+}
+
+.dv-reopen:hover {
+  background: var(--dv-paper-2);
+}
+
+.dv-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dv-grid {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  background: var(--dv-canvas);
+}
+
+.datasetviewer-gridfill {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Hugs the grid; its bottom border is the rule under the last row. */
+.dv-grid-inner {
+  width: 100%;
+  box-sizing: content-box;
+  border-bottom: 1px solid var(--dv-rule);
+}
+
+/* Full-width bottom status bar. Also keeps the grid's horizontal scrollbar
+   off the viewport edge. */
+.dv-statusbar {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  background: var(--dv-paper);
+  border-top: 1px solid var(--dv-rule);
+  color: var(--dv-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* ---- Columns panel -------------------------------------------------- */
+.dv-columns-panel {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dv-cols-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 8px 7px 12px;
+  flex: 0 0 auto;
+}
+
+.dv-cols-list {
+  overflow: auto;
+  flex: 1 1 auto;
+  padding-bottom: 4px;
+}
+
+.dv-col-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 12px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+}
+
+.dv-col-row:hover {
+  background: var(--dv-paper-2);
+}
+
+.dv-col-active {
+  background: var(--dv-signal-weak);
+  border-left-color: var(--dv-signal);
+}
+
+.dv-selectall {
+  border-bottom: 1px solid var(--dv-rule-2);
+  margin-bottom: 2px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* "Select all" is a control, not a data identifier -- override the mono
+   column-name treatment (two-class selector wins on specificity). */
+.dv-selectall .dv-col-name {
+  font-family: var(--dv-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--dv-ink-2);
+}
+
+.dv-col-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex: 0 0 auto;
+}
+
+/* The type chip -- signature element. A small monospace square, colour-coded
+   by column type, so the panel reads as a schema map. */
+.dv-ti {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-family: var(--dv-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.dv-ti-char {
+  color: var(--dv-char-fg);
+  background: var(--dv-char-bg);
+}
+.dv-ti-num {
+  color: var(--dv-num-fg);
+  background: var(--dv-num-bg);
+}
+.dv-ti-date {
+  color: var(--dv-date-fg);
+  background: var(--dv-date-bg);
+}
+
+.dv-col-name {
+  font-size: 12px;
+  color: var(--dv-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Property panel ------------------------------------------------- */
+.dv-property-panel {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--dv-rule);
+  background: var(--dv-paper);
+  max-height: 45%;
+  overflow: auto;
+}
+
+.dv-prop-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dv-prop-table th,
+.dv-prop-table td {
+  text-align: left;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--dv-rule-2);
+  vertical-align: top;
+}
+
+.dv-prop-table th {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dv-ink-3);
+  background: transparent;
+}
+
+.dv-prop-name {
+  color: var(--dv-ink-2);
+  font-size: 12px;
+  width: 38%;
+}
+
+.dv-prop-value {
+  color: var(--dv-ink);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+/* ---- Filter indicator (toolbar) ------------------------------------- */
+/* The filter is the hero verb -- give it an outlined chip presence. */
+.dv-filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  color: var(--dv-signal);
+  border: 1px solid var(--dv-rule);
+  border-radius: 6px;
+  background: var(--dv-canvas);
+  cursor: pointer;
+  padding: 4px 9px;
+  max-width: 340px;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+.dv-filter-trigger:hover {
+  border-color: var(--dv-signal);
+  background: var(--dv-signal-weak);
+}
+
+.dv-filter-trigger .dv-tb-label {
+  color: var(--dv-ink-2);
+}
+
+.dv-filter-value {
+  font-size: 12px;
+  color: var(--dv-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dv-filter-clear {
+  border: none;
+  background: transparent;
+  color: var(--dv-ink-3);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.dv-filter-clear:hover {
+  color: var(--dv-danger);
+}
+
+/* ---- Filter dialog (modal) ------------------------------------------ */
+.dv-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(21, 33, 43, 0.34);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+}
+
+/* Help is stacked above the filter dialog. */
+.dv-help-overlay {
+  z-index: 100001;
+}
+
+.dv-modal-toolrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dv-modal-help {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--dv-rule);
+  border-radius: 50%;
+  background: var(--dv-canvas);
+  color: var(--dv-signal);
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+}
+.dv-modal-help:hover {
+  background: var(--dv-signal-weak);
+  border-color: var(--dv-signal);
+}
+
+.dv-help-modal {
+  width: 420px;
+}
+.dv-help-h {
+  margin: 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-ink);
+}
+.dv-help-kw {
+  font-family: var(--dv-mono);
+  font-size: 12px;
+  background: var(--dv-paper);
+  border: 1px solid var(--dv-rule);
+  border-radius: 3px;
+  padding: 0 4px;
+  color: var(--dv-signal);
+}
+.dv-help-p {
+  margin: 8px 0;
+  color: var(--dv-ink-2);
+  line-height: 1.45;
+}
+.dv-help-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.dv-help-code {
+  display: inline-block;
+  background: var(--dv-paper);
+  border: 1px solid var(--dv-rule);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: var(--dv-mono);
+  font-size: 12px;
+  color: var(--dv-ink);
+}
+
+.dv-modal {
+  background: var(--dv-canvas);
+  border: 1px solid var(--dv-rule);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgba(21, 33, 43, 0.22);
+  width: 420px;
+  max-width: 90%;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.dv-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dv-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dv-ink);
+}
+
+.dv-modal-x {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--dv-ink-3);
+}
+.dv-modal-x:hover {
+  color: var(--dv-ink);
+}
+
+.dv-modal-clear {
+  align-self: flex-start;
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  border: 1px solid var(--dv-rule);
+  border-radius: 5px;
+  background: var(--dv-canvas);
+  color: var(--dv-ink);
+  cursor: pointer;
+  padding: 4px 11px;
+}
+.dv-modal-clear:hover {
+  border-color: var(--dv-signal);
+  color: var(--dv-signal);
+}
+
+.dv-modal-textarea {
+  font-family: var(--dv-mono);
+  font-size: 13px;
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  border: 1px solid var(--dv-rule);
+  border-radius: 7px;
+  padding: 9px;
+  color: var(--dv-ink);
+  box-sizing: border-box;
+}
+.dv-modal-textarea:focus {
+  outline: none;
+  border-color: var(--dv-signal);
+  box-shadow: 0 0 0 3px var(--dv-signal-weak);
+}
+
+.dv-modal-error {
+  color: var(--dv-danger);
+  font-size: 12px;
+  min-height: 14px;
+}
+
+.dv-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dv-modal-apply,
+.dv-modal-cancel {
+  font-family: var(--dv-sans);
+  font-size: 13px;
+  border-radius: 6px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.dv-modal-apply {
+  background: var(--dv-signal);
+  color: #fff;
+  border: 1px solid var(--dv-signal);
+}
+.dv-modal-apply:hover {
+  background: var(--dv-signal-hover);
+}
+.dv-modal-apply:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.dv-modal-cancel {
+  background: var(--dv-canvas);
+  border: 1px solid var(--dv-rule);
+  color: var(--dv-ink);
+}
+.dv-modal-cancel:hover {
+  border-color: var(--dv-ink-3);
+}
+
+/* ---- Add Filter dialog (type-aware) --------------------------------- */
+.dv-af-prompt {
+  color: var(--dv-ink-2);
+  font-size: 12px;
+}
+
+.dv-af-note {
+  padding: 6px 8px;
+  color: var(--dv-ink-3);
+  font-size: 12px;
+}
+
+.dv-af-values {
+  border: 1px solid var(--dv-rule);
+  border-radius: 7px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.dv-af-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dv-af-table th,
+.dv-af-table td {
+  text-align: left;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--dv-rule-2);
+}
+
+.dv-af-table td {
+  font-size: 12px;
+}
+
+.dv-af-table th {
+  background: var(--dv-paper);
+  color: var(--dv-ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+.dv-af-table tr {
+  cursor: pointer;
+}
+
+.dv-af-table tbody tr:hover,
+.dv-af-table tr:hover {
+  background: var(--dv-signal-weak);
+}
+
+.dv-af-numrows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dv-af-numrow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dv-af-op {
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--dv-rule);
+  border-radius: 5px;
+  background: var(--dv-canvas);
+  color: var(--dv-ink);
+}
+
+.dv-af-val,
+.dv-af-critinput {
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  flex: 1 1 auto;
+  padding: 5px 8px;
+  border: 1px solid var(--dv-rule);
+  border-radius: 5px;
+  color: var(--dv-ink);
+}
+.dv-af-val:focus,
+.dv-af-critinput:focus {
+  outline: none;
+  border-color: var(--dv-signal);
+  box-shadow: 0 0 0 3px var(--dv-signal-weak);
+}
+
+.dv-af-plus {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--dv-rule);
+  border-radius: 5px;
+  background: var(--dv-canvas);
+  cursor: pointer;
+  color: var(--dv-signal);
+  font-size: 16px;
+  line-height: 1;
+}
+.dv-af-plus:hover {
+  border-color: var(--dv-signal);
+  background: var(--dv-signal-weak);
+}
+
+.dv-af-crit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dv-af-critlabel {
+  width: 100px;
+  color: var(--dv-ink-2);
+  font-size: 12px;
+}
+
+/* ---- Custom date field + calendar ----------------------------------- */
+.dv-date-field {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--dv-rule);
+  border-radius: 5px;
+  background: var(--dv-canvas);
+  overflow: hidden;
+}
+.dv-date-field:focus-within {
+  border-color: var(--dv-signal);
+  box-shadow: 0 0 0 3px var(--dv-signal-weak);
+}
+
+.dv-date-input {
+  flex: 1 1 auto;
+  border: none;
+  outline: none;
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  padding: 5px 8px;
+  color: var(--dv-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dv-date-btn {
+  border: none;
+  background: transparent;
+  color: var(--dv-signal);
+  cursor: pointer;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dv-cal {
+  position: fixed;
+  z-index: 100001;
+  width: 264px;
+  background: var(--dv-canvas);
+  border: 1px solid var(--dv-rule);
+  border-radius: 10px;
+  box-shadow: 0 12px 36px rgba(21, 33, 43, 0.18);
+  padding: 11px;
+  font-family: var(--dv-sans);
+  font-size: 13px;
+  color: var(--dv-ink);
+}
+
+.dv-cal-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dv-cal-nav {
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--dv-signal);
+  line-height: 1;
+}
+.dv-cal-nav:hover {
+  background: var(--dv-paper-2);
+}
+
+.dv-cal-month {
+  flex: 1 1 auto;
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--dv-rule);
+  border-radius: 5px;
+  background: var(--dv-canvas);
+  color: var(--dv-ink);
+}
+
+.dv-cal-wd,
+.dv-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.dv-cal-wdc {
+  text-align: center;
+  color: var(--dv-ink-3);
+  font-size: 11px;
+  padding: 4px 0;
+}
+
+.dv-cal-day {
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 0;
+  border-radius: 5px;
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  color: var(--dv-ink);
+}
+.dv-cal-day:hover {
+  background: var(--dv-paper-2);
+}
+.dv-cal-day.muted {
+  color: var(--dv-rule);
+}
+.dv-cal-day.today {
+  border-color: var(--dv-signal);
+}
+.dv-cal-day.selected {
+  background: var(--dv-signal);
+  color: #fff;
+}
+
+.dv-cal-years {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.dv-cal-year {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: var(--dv-ink-2);
+}
+.dv-cal-year.current {
+  font-weight: 700;
+  color: var(--dv-ink);
+}
+
+.dv-cal-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dv-rule-2);
+}
+
+.dv-cal-link {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: var(--dv-signal);
+}
+.dv-cal-link:hover {
+  text-decoration: underline;
+}
+
+/* ---- Context menu --------------------------------------------------- */
+.dv-context-menu {
+  position: fixed;
+  z-index: 99999;
+  background: var(--dv-canvas);
+  border: 1px solid var(--dv-rule);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(21, 33, 43, 0.16);
+  padding: 4px 0;
+  min-width: 184px;
+  /* Appended to document.body, so set the font explicitly (it does not
+     inherit the widget root otherwise). */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: var(--dv-ink, #15212b);
+}
+
+.dv-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dv-menu-item:hover {
+  background: var(--dv-signal-weak);
+  color: var(--dv-signal);
+}
+
+.dv-menu-shortcut {
+  color: var(--dv-ink-3);
+  font-size: 12px;
+}
+
+.dv-menu-sep {
+  height: 1px;
+  background: var(--dv-rule-2);
+  margin: 4px 0;
+}
+
+/* ---- Reduced motion -------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .datasetviewer-root * {
+    transition: none !important;
+  }
+}

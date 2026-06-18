@@ -1,0 +1,5 @@
+dependencies:
+  - name: datasetviewer-css
+    version: 0.0.0.9000
+    src: htmlwidgets
+    stylesheet: datasetviewer.css
