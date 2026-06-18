@@ -40,7 +40,7 @@ home:
     Studio table viewer. One htmlwidget codebase serves interactive Shiny
     apps and static HTML, with a column-selection panel, per-column property
     metadata, a names-versus-labels toggle, header sort, free-text and
-    type-aware row filters, and CSV export -- over the whole dataset, with
+    type-aware row filters, and CSV export — over the whole dataset, with
     no row sampling, by querying it in the browser with DuckDB-WASM.
   links:
   - text: SAS Studio (design inspiration)
@@ -49,7 +49,7 @@ home:
     href: https://duckdb.org/docs/stable/clients/wasm/overview
   - text: Apache Parquet
     href: https://parquet.apache.org/
-  - text: artoo -- CDISC-native dataset I/O
+  - text: artoo — CDISC-native dataset I/O
     href: https://vthanik.github.io/artoo/
 
 reference:

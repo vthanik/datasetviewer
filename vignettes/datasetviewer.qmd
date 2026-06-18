@@ -15,7 +15,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 Looking at a dataset should not mean choosing between *fast* and *complete*.
 Grids that render every cell into the page bog down at a few thousand rows;
 ones that page through a server add a network round-trip to every scroll and
-filter. The usual escape hatch -- show the first 1,000 rows -- quietly hides
+filter. The usual escape hatch — show the first 1,000 rows — quietly hides
 exactly the rows you opened the viewer to find.
 
 `datasetviewer` takes a different route, borrowed from
@@ -23,7 +23,7 @@ exactly the rows you opened the viewer to find.
 The data is sent to the browser **once**, as Parquet, and queried in place
 with [DuckDB-WASM](https://duckdb.org/docs/stable/clients/wasm/overview); the grid is
 drawn on an HTML canvas and only ever materialises the rows you can see. Sort,
-filter, hide a column, jump to the last page -- each is a SQL query over the
+filter, hide a column, jump to the last page — each is a SQL query over the
 whole dataset that returns in milliseconds, with **no row sampling**. The same
 widget runs in an interactive Shiny app and in a static HTML document like
 this one.
@@ -31,7 +31,7 @@ this one.
 ## Your first viewer
 
 Hand `dataset_viewer()` a data frame. That is the entire API for the common
-case -- everything else is interaction inside the widget.
+case — everything else is interaction inside the widget.
 
 ```{r}
 library(datasetviewer)
@@ -39,24 +39,24 @@ dataset_viewer(mtcars)
 ```
 
 Try it: drag the scrollbar, drag a column border to resize, or click a row.
-The grid above is live -- it is the real widget, not a screenshot.
+The grid above is live — it is the real widget, not a screenshot.
 
 ## A guided tour of the interface
 
 The layout mirrors SAS Studio, so anyone who has used that viewer is already
 at home:
 
-- **Columns panel** (left) -- a checklist of every column with a type chip
+- **Columns panel** (left) — a checklist of every column with a type chip
   (`A` for character, `#` for numeric, a calendar for dates). Uncheck a column
   to hide it from the grid; the data is never reloaded.
-- **Property pane** (lower left) -- select a column to inspect its `Label`,
+- **Property pane** (lower left) — select a column to inspect its `Label`,
   `Name`, `Length`, `Type`, `Format`, and `Informat`, the same attributes
   `PROC CONTENTS` reports.
-- **View toggle** (toolbar) -- switch the header row between variable
+- **View toggle** (toolbar) — switch the header row between variable
   **names** and **labels**.
-- **Header menu** -- right-click any column header to sort ascending or
+- **Header menu** — right-click any column header to sort ascending or
   descending, add a filter, copy the column, or size the columns to content.
-- **Status bar** -- the total row and column counts, and the filtered count
+- **Status bar** — the total row and column counts, and the filtered count
   once a filter is active.
 
 ::: {.callout-tip}
@@ -71,7 +71,7 @@ A plain data frame has no labels, so the property pane shows names only. Point
 the viewer at a labelled or CDISC-conformed frame and the metadata comes to
 life. With the companion [`artoo`](https://vthanik.github.io/artoo/) package
 installed, column labels, formats, informats, and storage lengths are read
-straight from the frame and shown in the property pane -- and you can set the
+straight from the frame and shown in the property pane — and you can set the
 header row to use labels instead of names.
 
 ```{r}
@@ -82,7 +82,7 @@ dataset_viewer(artoo::cdisc_adsl, view = "labels")
 
 Select `STUDYID` in the columns panel and the property pane reads
 *Study Identifier*; the header row now shows labels because of
-`view = "labels"`. No `artoo` dependency is required for plain frames -- it is
+`view = "labels"`. No `artoo` dependency is required for plain frames — it is
 consulted only when present.
 
 ::: {.callout-note}
@@ -95,16 +95,16 @@ its metadata into the property pane.
 
 There are two ways to filter, both operating over every row:
 
-1. **Filter Table Rows** -- click the funnel in the toolbar and type a
+1. **Filter Table Rows** — click the funnel in the toolbar and type a
    free-text expression, SAS-style, such as `AGE >= 75 and SEX = "F"`. It is
    translated to a SQL `WHERE` clause, and the status bar updates to the
    matched count.
-2. **Add Filter** -- right-click a column header. The dialog adapts to the
+2. **Add Filter** — right-click a column header. The dialog adapts to the
    column's type: a checklist of distinct values for character columns, a
    comparison operator and value for numbers, and a date picker for dates.
 
 Because the filter runs in DuckDB over the full Parquet payload, the answer is
-exact -- the matched count is the true count, not a count within a sampled
+exact — the matched count is the true count, not a count within a sampled
 window.
 
 ## Built for scale: no row sampling
@@ -113,7 +113,7 @@ The design choice that makes this work is moving the query engine into the
 browser:
 
 - **Transport.** The frame is serialised to Parquet with `nanoparquet` and
-  carried in the widget payload -- columnar, compressed, and read natively by
+  carried in the widget payload — columnar, compressed, and read natively by
   the engine.
 - **Engine.** DuckDB-WASM reads that Parquet directly and answers every
   filter, sort, and page as SQL.
@@ -161,7 +161,7 @@ shinyApp(ui, server)
 
 ## Static HTML and Quarto
 
-No server is required for the static case -- this very vignette embeds live
+No server is required for the static case — this very vignette embeds live
 widgets. Drop `dataset_viewer()` into any R Markdown or Quarto document and
 the result is a self-contained, fully interactive grid that works offline once
 loaded. The same call you would write in a Shiny app produces the same viewer
@@ -169,9 +169,9 @@ here.
 
 ## Where to next
 
-- `?dataset_viewer` -- the full argument reference, including `view`, `width`,
+- `?dataset_viewer` — the full argument reference, including `view`, `width`,
   and `height`.
-- `?datasetviewerOutput` and `?renderDatasetViewer` -- the Shiny bindings and
+- `?datasetviewerOutput` and `?renderDatasetViewer` — the Shiny bindings and
   the input names the widget publishes.
-- [`artoo`](https://vthanik.github.io/artoo/) -- lossless CDISC dataset I/O
+- [`artoo`](https://vthanik.github.io/artoo/) — lossless CDISC dataset I/O
   and the metadata model the property pane reads.
