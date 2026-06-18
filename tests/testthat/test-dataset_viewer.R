@@ -67,11 +67,11 @@ test_that(".dv_col_kind() resolves the precise browser kind", {
   expect_equal(.dv_col_kind(c(TRUE, FALSE)), "bool")
 })
 
-test_that(".dv_col_length() returns 8 for numeric and the widest bytes for char", {
-  expect_equal(.dv_col_length(1:5), "8")
+test_that(".dv_col_length() is blank for numeric/date and widest bytes for char", {
+  expect_equal(.dv_col_length(1:5), "") # numeric length blank (PROC CONTENTS style)
   expect_equal(.dv_col_length(c("a", "abc", "ab")), "3")
   expect_equal(.dv_col_length(character(0)), "")
-  expect_equal(.dv_col_length(as.Date("2026-01-01")), "8")
+  expect_equal(.dv_col_length(as.Date("2026-01-01")), "") # dates are numeric -> blank
 })
 
 test_that("view argument is validated and carried into the payload", {

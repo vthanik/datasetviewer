@@ -5,7 +5,7 @@ test_that(".dv_meta_synth() reads R types and base label attributes", {
 
   expect_equal(meta[[1]]$type, "Num")
   expect_equal(meta[[1]]$kind, "number")
-  expect_equal(meta[[1]]$length, "8")
+  expect_equal(meta[[1]]$length, "") # numeric length is blank (PROC CONTENTS style)
   expect_equal(meta[[1]]$label, "")
   expect_equal(meta[[2]]$type, "Char")
   expect_equal(meta[[2]]$length, "3")

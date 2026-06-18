@@ -16,18 +16,14 @@
 }
 
 # Extract via artoo::columns(). The Informat column is present only when at
-# least one variable carries one. Numeric Len is blank in PROC CONTENTS style;
-# we surface 8 (the SAS numeric storage length) so the property panel is
-# consistent with the synthesized path.
+# least one variable carries one. Numeric Len is left blank (PROC CONTENTS /
+# artoo style); only character columns carry a meaningful storage width.
 .dv_meta_from_artoo <- function(x) {
   co <- artoo::columns(x)
   has_informat <- "Informat" %in% names(co)
   lapply(seq_len(nrow(co)), function(i) {
     type <- as.character(co$Type[i])
     len <- .dv_blank(co$Len[i])
-    if (identical(type, "Num") && !nzchar(len)) {
-      len <- "8"
-    }
     list(
       name = as.character(co$Variable[i]),
       label = .dv_blank(co$Label[i]),
@@ -87,11 +83,11 @@
 }
 
 # SAS-style storage length, as a character string for a stable payload type:
-# numeric/date/time columns are 8 bytes; character columns the widest value in
-# bytes (NA values excluded).
+# numeric/date/time columns are left blank (PROC CONTENTS / artoo style);
+# character columns report the widest value in bytes (NA values excluded).
 .dv_col_length <- function(col) {
   if (identical(.dv_col_type(col), "Num")) {
-    return("8")
+    return("")
   }
   v <- as.character(col)
   v <- v[!is.na(v)]
