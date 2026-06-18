@@ -1,7 +1,7 @@
 ---
-title: "Getting started with datasetviewer"
+title: "Get started with datasetviewer"
 vignette: >
-  %\VignetteIndexEntry{Getting started with datasetviewer}
+  %\VignetteIndexEntry{Get started with datasetviewer}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 format: html
@@ -12,54 +12,166 @@ format: html
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-`datasetviewer` renders a dataset in a fast, scrollable grid modelled on the
-SAS Studio table viewer: a column-selection panel, a per-column property
-pane (Label, Name, Length, Type, Format, Informat), a names-versus-labels
-header toggle, header-driven sort, and a free-text row filter. The same
-widget runs in interactive Shiny apps and in static HTML documents.
+Looking at a dataset should not mean choosing between *fast* and *complete*.
+Grids that render every cell into the page bog down at a few thousand rows;
+ones that page through a server add a network round-trip to every scroll and
+filter. The usual escape hatch -- show the first 1,000 rows -- quietly hides
+exactly the rows you opened the viewer to find.
 
-The data is sent to the browser as Parquet and queried in place with
-DuckDB-WASM, so filtering, sorting, and scrolling stay fast on large
-datasets without sampling rows.
+`datasetviewer` takes a different route, borrowed from the
+[SAS Studio table viewer](https://documentation.sas.com/doc/en/webeditorcdc/v_001/webeditorug/p1pr6m3i1p7n4nn19f8e8x3yw1xq.htm).
+The data is sent to the browser **once**, as Parquet, and queried in place
+with [DuckDB-WASM](https://duckdb.org/docs/api/wasm/overview); the grid is
+drawn on an HTML canvas and only ever materialises the rows you can see. Sort,
+filter, hide a column, jump to the last page -- each is a SQL query over the
+whole dataset that returns in milliseconds, with **no row sampling**. The same
+widget runs in an interactive Shiny app and in a static HTML document like
+this one.
 
-## A plain data frame
+## Your first viewer
+
+Hand `dataset_viewer()` a data frame. That is the entire API for the common
+case -- everything else is interaction inside the widget.
 
 ```{r}
 library(datasetviewer)
 dataset_viewer(mtcars)
 ```
 
-Right-click a column header to sort or add a filter. Click the funnel in the
-toolbar to edit the filter expression directly, for example `mpg > 20 and
-cyl == 4`.
+Try it: drag the scrollbar, drag a column border to resize, or click a row.
+The grid above is live -- it is the real widget, not a screenshot.
 
-## Column metadata and labels
+## A guided tour of the interface
 
-When the `artoo` package is installed, column metadata (labels, formats,
-informats, storage lengths) is read from a labelled or artoo-conformed
-frame and shown in the property pane. Switch the **View** dropdown to
-*Column labels* to use labels as headers.
+The layout mirrors SAS Studio, so anyone who has used that viewer is already
+at home:
+
+- **Columns panel** (left) -- a checklist of every column with a type chip
+  (`A` for character, `#` for numeric, a calendar for dates). Uncheck a column
+  to hide it from the grid; the data is never reloaded.
+- **Property pane** (lower left) -- select a column to inspect its `Label`,
+  `Name`, `Length`, `Type`, `Format`, and `Informat`, the same attributes
+  `PROC CONTENTS` reports.
+- **View toggle** (toolbar) -- switch the header row between variable
+  **names** and **labels**.
+- **Header menu** -- right-click any column header to sort ascending or
+  descending, add a filter, copy the column, or size the columns to content.
+- **Status bar** -- the total row and column counts, and the filtered count
+  once a filter is active.
+
+::: {.callout-tip}
+Sorting and filtering are driven from the widget, not from R arguments, so a
+reader of your report can explore the data themselves without re-running any
+code.
+:::
+
+## CDISC metadata, labels, and the property pane
+
+A plain data frame has no labels, so the property pane shows names only. Point
+the viewer at a labelled or CDISC-conformed frame and the metadata comes to
+life. With the companion [`artoo`](https://vthanik.github.io/artoo/) package
+installed, column labels, formats, informats, and storage lengths are read
+straight from the frame and shown in the property pane -- and you can set the
+header row to use labels instead of names.
 
 ```{r}
-#| eval: false
-library(artoo)
-adsl <- read_dataset("adsl.parquet")
-dataset_viewer(adsl, view = "labels")
+#| eval: !expr requireNamespace("artoo", quietly = TRUE)
+# artoo ships the CDISC pilot ADaM datasets used across these docs.
+dataset_viewer(artoo::cdisc_adsl, view = "labels")
 ```
 
-## In Shiny
+Select `STUDYID` in the columns panel and the property pane reads
+*Study Identifier*; the header row now shows labels because of
+`view = "labels"`. No `artoo` dependency is required for plain frames -- it is
+consulted only when present.
 
-`datasetviewerOutput()` and `renderDatasetViewer()` embed the widget, and the
-current filter, sort, and column selection are published back as inputs
-(`input$<id>_filter`, `input$<id>_sort`, `input$<id>_columns`,
-`input$<id>_view`) so the app can reuse them server-side.
+::: {.callout-note}
+`dataset_viewer()` also accepts a **path** to a dataset file
+(`dataset_viewer("adsl.parquet")`); `artoo::read_dataset()` reads it, carrying
+its metadata into the property pane.
+:::
+
+## Filtering the whole table
+
+There are two ways to filter, both operating over every row:
+
+1. **Filter Table Rows** -- click the funnel in the toolbar and type a
+   free-text expression, SAS-style, such as `AGE >= 75 and SEX = "F"`. It is
+   translated to a SQL `WHERE` clause, and the status bar updates to the
+   matched count.
+2. **Add Filter** -- right-click a column header. The dialog adapts to the
+   column's type: a checklist of distinct values for character columns, a
+   comparison operator and value for numbers, and a date picker for dates.
+
+Because the filter runs in DuckDB over the full Parquet payload, the answer is
+exact -- the matched count is the true count, not a count within a sampled
+window.
+
+## Built for scale: no row sampling
+
+The design choice that makes this work is moving the query engine into the
+browser:
+
+- **Transport.** The frame is serialised to Parquet with `nanoparquet` and
+  carried in the widget payload -- columnar, compressed, and read natively by
+  the engine.
+- **Engine.** DuckDB-WASM reads that Parquet directly and answers every
+  filter, sort, and page as SQL.
+- **Grid.** The canvas grid asks the engine only for the rows in the visible
+  window (a `LIMIT`/`OFFSET` query), so scrolling cost is independent of the
+  dataset's size.
+
+The practical upshot: a viewer over a multi-million-row frame scrolls, sorts,
+and filters as smoothly as one over `mtcars`, and every row stays reachable.
+
+## Embedding in a Shiny app
+
+In Shiny, pair `datasetviewerOutput()` in the UI with `renderDatasetViewer()`
+on the server. The viewer is not a dead end: the user's current column
+selection, filter, sort, and view mode flow **back** into the app as inputs,
+namespaced by the output id, so the rest of the app can react to what the
+analyst is looking at.
 
 ```{r}
 #| eval: false
 library(shiny)
-ui <- fluidPage(datasetviewerOutput("viewer", height = "500px"))
+library(datasetviewer)
+
+ui <- fluidPage(
+  datasetviewerOutput("viewer", height = "560px"),
+  verbatimTextOutput("state")
+)
+
 server <- function(input, output, session) {
   output$viewer <- renderDatasetViewer(dataset_viewer(mtcars))
+
+  # State changes in the widget arrive as inputs, namespaced by output id.
+  output$state <- renderPrint({
+    list(
+      columns = input$viewer_columns, # columns currently shown
+      filter  = input$viewer_filter, # active filter expression
+      sort    = input$viewer_sort, # active sort
+      view    = input$viewer_view # "names" or "labels"
+    )
+  })
 }
+
 shinyApp(ui, server)
 ```
+
+## Static HTML and Quarto
+
+No server is required for the static case -- this very vignette embeds live
+widgets. Drop `dataset_viewer()` into any R Markdown or Quarto document and
+the result is a self-contained, fully interactive grid that works offline once
+loaded. The same call you would write in a Shiny app produces the same viewer
+here.
+
+## Where to next
+
+- `?dataset_viewer` -- the full argument reference, including `view`, `width`,
+  and `height`.
+- `?datasetviewerOutput` and `?renderDatasetViewer` -- the Shiny bindings and
+  the input names the widget publishes.
+- [`artoo`](https://vthanik.github.io/artoo/) -- lossless CDISC dataset I/O
+  and the metadata model the property pane reads.

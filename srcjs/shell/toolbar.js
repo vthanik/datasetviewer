@@ -7,7 +7,7 @@ import { ICONS } from "./icons.js";
 export function createToolbar(
   container,
   store,
-  { rowCount, scrollApi, onOpenFilter, onClearFilter, onExport, onPrint }
+  { rowCount, scrollApi, onOpenFilter, onClearFilter, onExport, onPrint, onShowCode }
 ) {
   container.innerHTML = "";
 
@@ -29,6 +29,9 @@ export function createToolbar(
   const printBtn = iconButton(ICONS.print, "Print");
   printBtn.addEventListener("click", () => onPrint && onPrint());
   container.appendChild(printBtn);
+  const codeBtn = iconButton(ICONS.code, "Show the code that creates this view");
+  codeBtn.addEventListener("click", () => onShowCode && onShowCode());
+  container.appendChild(codeBtn);
   container.appendChild(sep());
 
   // --- Filter indicator: the whole funnel + label + expression opens the

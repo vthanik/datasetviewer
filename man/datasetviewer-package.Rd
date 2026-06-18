@@ -12,6 +12,7 @@ An interactive dataset viewer that renders a fast, scrollable grid with a column
 Useful links:
 \itemize{
   \item \url{https://github.com/vthanik/datasetviewer}
+  \item \url{https://vthanik.github.io/datasetviewer/}
   \item Report bugs at \url{https://github.com/vthanik/datasetviewer/issues}
 }
 

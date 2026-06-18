@@ -12,12 +12,16 @@ test_that("dataset_viewer() rejects non-data-frame input", {
   )
 })
 
-test_that(".dv_payload() carries Parquet, column meta, view, and counts", {
-  p <- .dv_payload(head(iris, 3))
+test_that(".dv_payload() carries Parquet, column meta, view, name, and counts", {
+  p <- .dv_payload(head(iris, 3), data_name = "iris")
 
-  expect_named(p, c("parquet", "columns", "view", "n_rows", "n_cols"))
+  expect_named(
+    p,
+    c("parquet", "columns", "view", "data_name", "n_rows", "n_cols")
+  )
   expect_type(p$parquet, "character")
   expect_equal(p$view, "names")
+  expect_equal(p$data_name, "iris")
   expect_equal(p$n_rows, 3L)
   expect_equal(p$n_cols, 5L)
   expect_equal(vapply(p$columns, `[[`, "", "name"), names(iris))
@@ -25,6 +29,12 @@ test_that(".dv_payload() carries Parquet, column meta, view, and counts", {
   expect_true(all(
     vapply(p$columns, `[[`, "", "type") %in% c("Num", "Char")
   ))
+})
+
+test_that("dataset_viewer() captures the data symbol name for the code view", {
+  mt <- head(mtcars, 2)
+  w <- dataset_viewer(mt)
+  expect_equal(w$x$data_name, "mt")
 })
 
 test_that(".dv_columns_meta() emits the SAS property fields + kind per column", {

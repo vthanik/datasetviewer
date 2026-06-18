@@ -27,8 +27,13 @@ dataset_viewer <- function(
   height = NULL,
   elementId = NULL
 ) {
+  # Capture the symbol the user passed (mtcars, artoo::cdisc_adsl) for the
+  # "Show code" snippet, before x is forced or a path is read.
+  data_name <- rlang::as_label(rlang::enexpr(x))
+
   if (is.character(x) && length(x) == 1L) {
     x <- .dv_read_path(x, call = rlang::caller_env())
+    data_name <- "data" # a path literal is not a usable data name
   }
   if (!inherits(x, "data.frame")) {
     cli::cli_abort(
@@ -42,7 +47,7 @@ dataset_viewer <- function(
   }
   view <- rlang::arg_match(view)
 
-  payload <- .dv_payload(x, view = view)
+  payload <- .dv_payload(x, view = view, data_name = data_name)
 
   htmlwidgets::createWidget(
     name = "datasetviewer",
@@ -80,11 +85,12 @@ dataset_viewer <- function(
 # Assemble the widget payload. The data travels as base64 Parquet; the browser
 # registers it in DuckDB-WASM and queries it natively. Column metadata feeds the
 # column panel (icons) and the property panel.
-.dv_payload <- function(x, view = "names") {
+.dv_payload <- function(x, view = "names", data_name = "data") {
   list(
     parquet = .dv_to_parquet_b64(x),
     columns = .dv_columns_meta(x),
     view = view,
+    data_name = data_name,
     n_rows = nrow(x),
     n_cols = ncol(x)
   )

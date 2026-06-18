@@ -15,6 +15,8 @@ import { createColumnsPanel } from "./shell/columns_panel.js";
 import { createPropertyPanel } from "./shell/property_panel.js";
 import { createFilterDialog } from "./shell/filter_dialog.js";
 import { createAddFilterDialog } from "./shell/add_filter_dialog.js";
+import { createShowCodeDialog } from "./shell/show_code_dialog.js";
+import { dplyrCode } from "./codegen.js";
 import { showContextMenu } from "./shell/context_menu.js";
 import { exportCsv } from "./shell/export.js";
 import { wireShiny } from "./shiny.js";
@@ -158,6 +160,12 @@ HTMLWidgets.widget({
           onApply: appendFilter,
         });
 
+        // SAS-style "Show code": a snapshot of the dplyr pipeline for the
+        // current view (data name captured from the R symbol).
+        const showCodeDialog = createShowCodeDialog(el, {
+          getCode: () => dplyrCode(store.get(), x.data_name),
+        });
+
         // --- shell pieces ------------------------------------------
         const scrollApi = {};
         const gridApi = {};
@@ -171,6 +179,7 @@ HTMLWidgets.widget({
             if (engine) exportCsv({ engine, store, rowCount: currentRowCount });
           },
           onPrint: () => window.print(),
+          onShowCode: () => showCodeDialog.open(),
         });
         createColumnsPanel(colsPanel, store, { onCollapse: collapse });
         createPropertyPanel(propPanel, store);

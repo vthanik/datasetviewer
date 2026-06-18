@@ -31,6 +31,7 @@ Suggests:
     withr
 Config/testthat/edition: 3
 VignetteBuilder: quarto
-URL: https://github.com/vthanik/datasetviewer
+URL: https://github.com/vthanik/datasetviewer,
+    https://vthanik.github.io/datasetviewer/
 BugReports: https://github.com/vthanik/datasetviewer/issues
 Config/roxygen2/version: 8.0.0

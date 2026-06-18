@@ -648,6 +648,44 @@
   border-color: var(--dv-ink-3);
 }
 
+/* ---- Show code dialog ----------------------------------------------- */
+.dv-code-modal {
+  width: 560px;
+}
+
+.dv-code-block {
+  font-family: var(--dv-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+  padding: 14px 16px;
+  background: #f6f8fa;
+  border: 1px solid var(--dv-rule);
+  border-radius: 7px;
+  color: var(--dv-ink);
+  white-space: pre;
+  overflow: auto;
+  max-height: 360px;
+}
+
+/* GitHub-light-style token colours for the generated R snippet. */
+.dv-code-block .hl-fun {
+  color: #6f42c1;
+}
+.dv-code-block .hl-str {
+  color: #0a7d33;
+}
+.dv-code-block .hl-num {
+  color: #005cc5;
+}
+.dv-code-block .hl-op {
+  color: #d73a49;
+}
+.dv-code-block .hl-com {
+  color: #6a737d;
+  font-style: italic;
+}
+
 /* ---- Add Filter dialog (type-aware) --------------------------------- */
 .dv-af-prompt {
   color: var(--dv-ink-2);

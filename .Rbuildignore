@@ -21,6 +21,7 @@
 ^README\.qmd$
 ^\.github$
 ^_pkgdown\.yml$
+^pkgdown$
 ^docs$
 ^vignettes/\.quarto$
 ^vignettes/.*_files$

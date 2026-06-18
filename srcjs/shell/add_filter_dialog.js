@@ -50,6 +50,19 @@ export function createAddFilterDialog(host, { getDistinct, onApply }) {
     const foot = el("div", "dv-modal-foot");
     const apply = el("button", "dv-modal-apply");
     apply.textContent = "Filter";
+    const clear = el("button", "dv-modal-cancel");
+    clear.textContent = "Clear";
+    clear.addEventListener("click", () => {
+      // Reset the picker in place (matches SAS's Clear, which empties the
+      // selection without closing or applying the filter).
+      modal
+        .querySelectorAll('input[type="checkbox"]')
+        .forEach((c) => (c.checked = false));
+      modal
+        .querySelectorAll(".dv-af-val, .dv-af-critinput, .dv-date-input")
+        .forEach((i) => (i.value = ""));
+      err.textContent = "";
+    });
     const cancel = el("button", "dv-modal-cancel");
     cancel.textContent = "Cancel";
     cancel.addEventListener("click", close);
@@ -68,6 +81,7 @@ export function createAddFilterDialog(host, { getDistinct, onApply }) {
         });
     });
     foot.appendChild(apply);
+    foot.appendChild(clear);
     foot.appendChild(cancel);
     modal.appendChild(foot);
 

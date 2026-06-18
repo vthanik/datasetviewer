@@ -1,0 +1,71 @@
+url: https://vthanik.github.io/datasetviewer/
+
+development:
+  mode: auto
+
+authors:
+  Vignesh Thanikachalam:
+    href: https://github.com/vthanik
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#0378cd"
+    base_font: { google: "DM Sans" }
+    heading_font: { google: "DM Sans" }
+    code_font: { google: "DM Mono" }
+    border-radius: 0
+    btn-border-radius: 3px
+    grid-gutter-width: 3rem
+    pkgdown-nav-height: 78px
+
+code:
+  width: 71
+
+navbar:
+  type: light
+  bg: none
+  structure:
+    left: [intro, reference, news]
+    right: [search, github]
+
+home:
+  # Match the sibling sites' sidebar: Links / License / Citation / Developers.
+  # Omitting `dev` drops the development-version "Dev status" badge section.
+  sidebar:
+    structure: [links, license, citation, authors]
+  title: SAS Studio-style dataset viewer for R
+  description: >
+    An interactive, canvas-rendered dataset viewer modelled on the SAS
+    Studio table viewer. One htmlwidget codebase serves interactive Shiny
+    apps and static HTML, with a column-selection panel, per-column property
+    metadata, a names-versus-labels toggle, header sort, free-text and
+    type-aware row filters, and CSV export -- over the whole dataset, with
+    no row sampling, by querying it in the browser with DuckDB-WASM.
+  links:
+  - text: SAS Studio table viewer (design inspiration)
+    href: https://documentation.sas.com/doc/en/webeditorcdc/v_001/webeditorug/p1pr6m3i1p7n4nn19f8e8x3yw1xq.htm
+  - text: DuckDB-WASM
+    href: https://duckdb.org/docs/api/wasm/overview
+  - text: Apache Parquet
+    href: https://parquet.apache.org/
+  - text: artoo -- CDISC-native dataset I/O
+    href: https://vthanik.github.io/artoo/
+
+reference:
+- title: Create a viewer
+  desc: >
+    Wrap a data frame, an artoo-conformed frame, or a path to a dataset
+    file into an interactive viewer widget. Plain data frames work with
+    zero artoo dependency; artoo supplies CDISC column metadata when present.
+  contents:
+  - dataset_viewer
+
+- title: Shiny bindings
+  desc: >
+    Embed the viewer in a Shiny app. Pair the output placeholder in the UI
+    with the render function on the server; state changes (selected columns,
+    filter, sort, view mode) flow back as Shiny inputs.
+  contents:
+  - datasetviewerOutput
+  - renderDatasetViewer
