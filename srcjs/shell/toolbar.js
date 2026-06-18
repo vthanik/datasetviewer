@@ -7,7 +7,7 @@ import { ICONS } from "./icons.js";
 export function createToolbar(
   container,
   store,
-  { rowCount, scrollApi, onOpenFilter, onClearFilter, onExport, onPrint, onShowCode }
+  { rowCount, scrollApi, onOpenFilter, onClearFilter, onExport, onShowCode }
 ) {
   container.innerHTML = "";
 
@@ -26,9 +26,6 @@ export function createToolbar(
   const exportBtn = iconButton(ICONS.export, "Export current view to CSV");
   exportBtn.addEventListener("click", () => onExport && onExport());
   container.appendChild(exportBtn);
-  const printBtn = iconButton(ICONS.print, "Print");
-  printBtn.addEventListener("click", () => onPrint && onPrint());
-  container.appendChild(printBtn);
   const codeBtn = iconButton(ICONS.code, "Show the code that creates this view");
   codeBtn.addEventListener("click", () => onShowCode && onShowCode());
   container.appendChild(codeBtn);

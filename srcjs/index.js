@@ -199,7 +199,6 @@ HTMLWidgets.widget({
           onExport: () => {
             if (engine) exportCsv({ engine, store, rowCount: currentRowCount });
           },
-          onPrint: () => window.print(),
           onShowCode: () => showCodeDialog.open(),
         });
         createColumnsPanel(colsPanel, store, { onCollapse: collapse });
