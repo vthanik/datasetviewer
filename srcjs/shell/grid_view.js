@@ -27,33 +27,34 @@ const ROW_H = 29;
 const HEADER_H = 34;
 const HSCROLL_PAD = 18; // leave room for the horizontal scrollbar
 
-// Canvas theme matching the shell stylesheet, which mirrors the Loom clinical
-// theme: a muted slate-blue accent on neutral grays. The font stays the system
-// sans stack (NOT monospace) -- this grid lives inside a Shiny data explorer.
-// Keep these hexes in sync with the :root tokens in styles.css.
+// Canvas theme matching the shell stylesheet: the clean SAS Studio interface.
+// Colours read from the live SAS Studio UI (DevTools/CDP): accent #0378cd, text
+// #2b3138, hairline #e9ecef, selection ~#cbecff. The font is the neutral system
+// stack (NOT SAS's commercial AvenirNext, which we cannot redistribute) -- clean
+// on every OS, zero CRAN risk. Keep these hexes in sync with styles.css.
 const GRID_THEME = {
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-  baseFontStyle: "12px",
-  headerFontStyle: "600 12px",
-  accentColor: "#4a6fa5",
-  accentLight: "rgba(74, 111, 165, 0.12)",
-  textDark: "#1a1d23",
-  textMedium: "#4b5563",
-  textLight: "#6b7280",
-  textHeader: "#1a1d23",
+  baseFontStyle: "13px",
+  headerFontStyle: "600 13px",
+  accentColor: "#0378cd",
+  accentLight: "rgba(3, 120, 205, 0.16)",
+  textDark: "#2b3138",
+  textMedium: "#5e6a7b",
+  textLight: "#768396",
+  textHeader: "#2b3138",
   bgCell: "#ffffff",
-  bgCellMedium: "#f7f8fa",
-  bgHeader: "#f7f8fa",
-  bgHeaderHovered: "#eef0f3",
-  bgHeaderHasFocus: "#eef0f3",
+  bgCellMedium: "#ffffff",
+  bgHeader: "#ffffff",
+  bgHeaderHovered: "#eef1f4",
+  bgHeaderHasFocus: "#eef1f4",
   bgBubble: "#ffffff",
-  borderColor: "#eceef2",
-  horizontalBorderColor: "#eceef2",
-  drilldownBorder: "#e2e5ea",
-  linkColor: "#4a6fa5",
-  bgIconHeader: "#4b5563",
-  fgIconHeader: "#f7f8fa",
+  borderColor: "#eef1f4",
+  horizontalBorderColor: "#f0f2f5",
+  drilldownBorder: "#e9ecef",
+  linkColor: "#0378cd",
+  bgIconHeader: "#5e6a7b",
+  fgIconHeader: "#f6f8fa",
   textHeaderSelected: "#ffffff",
   cellHorizontalPadding: 10,
 };
@@ -292,7 +293,7 @@ function Grid({
           onHeaderContextMenu,
           onCellContextMenu,
           onColumnResize,
-          rowMarkers: "clickable-number",
+          rowMarkers: "number", // plain row numbers, no checkbox (matches SAS)
           rowHeight: ROW_H,
           headerHeight: HEADER_H,
           gridSelection: selection,

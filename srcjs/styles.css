@@ -9,23 +9,31 @@
    menu and the calendar popup are appended to document.body (outside the
    widget root) -- they must still resolve these variables.
 
-   These mirror the Loom clinical theme (sibling app, _archive): a muted
-   slate-blue accent and neutral grays, with per-type colour badges
-   (char -> blue, num -> violet, date -> amber). The web fonts Loom loads from
-   a CDN are intentionally NOT used here -- datasetviewer must render offline /
-   self-contained (Quarto, CRAN), so it stays on the system stacks. */
+   Clean SAS Studio interface: white surfaces, neutral grays, hairline grid
+   lines, and a single SAS blue accent (selection, focus, links, primary). The
+   per-type chip colours (char -> blue, num -> violet, date -> amber) are our
+   own and kept as-is. System font stacks only -- the widget must render
+   offline / self-contained (Quarto, CRAN).
+
+   Colour tokens are read from the live SAS Studio interface (DevTools/CDP):
+   accent blue #0378cd, text #2b3138, hairline #e9ecef, selection ~#cbecff. The
+   font is deliberately the neutral system stack (NOT SAS's commercial AvenirNext,
+   which we cannot redistribute) -- native and clean on every OS, zero CRAN risk. */
 :root {
-  --dv-ink: #1a1d23;
-  --dv-ink-2: #4b5563;
-  --dv-ink-3: #6b7280;
-  --dv-paper: #f7f8fa;
-  --dv-paper-2: #eef0f3;
+  --dv-ink: #2b3138;
+  --dv-ink-2: #5e6a7b;
+  --dv-ink-3: #768396;
+  /* SAS surfaces are white -- chrome (toolbar, sidebar, header, status bar)
+     is white too, separated only by hairlines. --dv-paper-2 stays a faint
+     gray for hover feedback only. */
+  --dv-paper: #ffffff;
+  --dv-paper-2: #eef1f4;
   --dv-canvas: #ffffff;
-  --dv-rule: #e2e5ea;
-  --dv-rule-2: #eceef2;
-  --dv-signal: #4a6fa5;
-  --dv-signal-hover: #3d5f8f;
-  --dv-signal-weak: rgba(74, 111, 165, 0.12);
+  --dv-rule: #e9ecef;
+  --dv-rule-2: #f0f2f5;
+  --dv-signal: #0378cd;
+  --dv-signal-hover: #036fbe;
+  --dv-signal-weak: rgba(3, 120, 205, 0.12);
   --dv-char-fg: #0369a1;
   --dv-char-bg: #e0f2fe;
   --dv-num-fg: #6d28d9;
@@ -52,6 +60,30 @@
   position: relative;
 }
 
+/* ---- Host isolation --------------------------------------------------
+   The widget embeds in arbitrary Shiny / bslib pages whose Bootstrap base
+   styles can bleed into our bare elements. Scope a minimal reset so the
+   widget renders identically regardless of the host theme. Covers the
+   body-portaled context menu and calendar too (they live outside the root). */
+.datasetviewer-root *,
+.datasetviewer-root *::before,
+.datasetviewer-root *::after,
+.dv-context-menu,
+.dv-context-menu *,
+.dv-cal,
+.dv-cal * {
+  box-sizing: border-box;
+}
+
+/* Form controls do not inherit font-family by default, and Bootstrap restyles
+   them -- force our stack so controls match the widget in any host. */
+.datasetviewer-root button,
+.datasetviewer-root input,
+.datasetviewer-root select,
+.datasetviewer-root textarea {
+  font-family: inherit;
+}
+
 .datasetviewer-root *:focus-visible {
   outline: 2px solid var(--dv-signal);
   outline-offset: 1px;
@@ -62,7 +94,7 @@
   accent-color: var(--dv-signal);
 }
 
-/* The uppercase tracked micro-label register -- the chrome's voice. */
+/* Chrome labels -- uppercase tracked micro-label register. */
 .dv-tb-label,
 .dv-cols-title {
   text-transform: uppercase;
@@ -257,6 +289,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
+  margin: 0; /* our rows are <label>s; cancel Bootstrap's label margin */
   padding: 4px 12px;
   border-left: 2px solid transparent;
   cursor: pointer;
@@ -344,6 +377,7 @@
 
 .dv-prop-table {
   width: 100%;
+  margin: 0; /* cancel Bootstrap's table margin-bottom */
   border-collapse: collapse;
 }
 
@@ -361,7 +395,7 @@
   font-size: 10px;
   font-weight: 600;
   color: var(--dv-ink-3);
-  background: transparent;
+  background: #f5f6f8;
 }
 
 .dv-prop-name {
@@ -521,9 +555,9 @@
 }
 
 .dv-modal-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--dv-ink);
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--dv-signal);
 }
 
 .dv-modal-x {
@@ -629,12 +663,13 @@
 .dv-af-values {
   border: 1px solid var(--dv-rule);
   border-radius: 7px;
-  max-height: 200px;
+  max-height: 260px;
   overflow: auto;
 }
 
 .dv-af-table {
   width: 100%;
+  margin: 0; /* cancel Bootstrap's table margin-bottom */
   border-collapse: collapse;
 }
 
@@ -650,12 +685,10 @@
 }
 
 .dv-af-table th {
-  background: var(--dv-paper);
-  color: var(--dv-ink-2);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 10px;
-  font-weight: 600;
+  background: #f5f6f8;
+  color: var(--dv-ink);
+  font-size: 13px;
+  font-weight: 400;
   position: sticky;
   top: 0;
 }
@@ -790,6 +823,7 @@
 .dv-cal-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   margin-bottom: 8px;
 }
@@ -810,13 +844,15 @@
 }
 
 .dv-cal-month {
-  flex: 1 1 auto;
+  width: 130px; /* fixed so "May" vs "September" never shifts the layout */
   font: inherit;
   padding: 4px 6px;
   border: 1px solid var(--dv-rule);
   border-radius: 5px;
   background: var(--dv-canvas);
   color: var(--dv-ink);
+  text-align: center;
+  text-align-last: center; /* centers the selected value in the closed select */
 }
 
 .dv-cal-wd,
