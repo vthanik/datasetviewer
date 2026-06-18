@@ -9,6 +9,7 @@ import { createStore, initialState } from "./state.js";
 import { createEngine } from "./engine/engine.js";
 import { b64ToBytes } from "./parquet_decode.js";
 import { whereFromExpr, orderFromSort } from "./sql.js";
+import { validateFilterTypes } from "./filter_validate.js";
 import { createGrid } from "./shell/grid_view.js";
 import { createToolbar } from "./shell/toolbar.js";
 import { createColumnsPanel } from "./shell/columns_panel.js";
@@ -54,6 +55,15 @@ HTMLWidgets.widget({
         el.innerHTML = "";
 
         const store = createStore(initialState(x));
+
+        // Column name -> kind, for strict type validation of filter values.
+        const kindMap = () => {
+          const m = {};
+          store.get().columns.forEach((c) => {
+            m[c.name] = c.kind || (c.type === "Num" ? "number" : "string");
+          });
+          return m;
+        };
 
         // --- layout skeleton ---------------------------------------
         const toolbar = div("dv-toolbar");
@@ -137,6 +147,12 @@ HTMLWidgets.widget({
           getExpr: () => store.get().filterExpr,
           onApply: (expr) => {
             if (!engine) return Promise.resolve();
+            // Strict type check first -- fail fast before the query runs.
+            try {
+              validateFilterTypes(expr, kindMap());
+            } catch (e) {
+              return Promise.reject(e);
+            }
             return engine.count(whereFromExpr(expr)).then(() => {
               store.set({ filterExpr: expr });
             });
@@ -150,6 +166,11 @@ HTMLWidgets.widget({
           // Parenthesize only a compound clause (the builders join with " and ").
           const c = clause.includes(" and ") ? `(${clause})` : clause;
           const next = cur ? `${cur} and ${c}` : c;
+          try {
+            validateFilterTypes(next, kindMap());
+          } catch (e) {
+            return Promise.reject(e);
+          }
           return engine.count(whereFromExpr(next)).then(() => {
             store.set({ filterExpr: next });
           });
