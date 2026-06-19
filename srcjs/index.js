@@ -10,7 +10,12 @@ import { createEngine } from "./engine/engine.js";
 import { b64ToBytes } from "./parquet_decode.js";
 import { whereFromExpr, orderFromSort } from "./sql.js";
 import { replaceColumnClause } from "./filter_expr.js";
-import { cycleSort, setColumnSort, removeColumnSort } from "./sort.js";
+import {
+  cycleSort,
+  setColumnSort,
+  removeColumnSort,
+  plainClickSort,
+} from "./sort.js";
 import { validateFilterTypes } from "./filter_validate.js";
 import { createGrid } from "./shell/grid_view.js";
 import { createToolbar } from "./shell/toolbar.js";
@@ -39,6 +44,10 @@ HTMLWidgets.widget({
     el.classList.add("datasetviewer-root");
     let grid = null;
     let engine = null;
+    // The column currently in the plain-click "neutral" step (selected, not yet
+    // sorted). Any non-plain sort path (Shift-click, the right-click menu) clears
+    // it so the next plain click starts the cycle fresh.
+    let neutralCol = null;
 
     function teardown() {
       if (grid) {
@@ -274,21 +283,27 @@ HTMLWidgets.widget({
             {
               label: "Sort Ascending",
               icon: MENU_ICONS.sortAsc,
-              onClick: () =>
-                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "asc") }),
+              onClick: () => {
+                neutralCol = null;
+                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "asc") });
+              },
             },
             {
               label: "Sort Descending",
               icon: MENU_ICONS.sortDesc,
-              onClick: () =>
-                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "desc") }),
+              onClick: () => {
+                neutralCol = null;
+                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "desc") });
+              },
             },
             {
               label: "Clear Sorting",
               icon: MENU_ICONS.clearSort,
               disabled: !colSorted,
-              onClick: () =>
-                store.set({ sort: removeColumnSort(store.get().sort, colMeta.name) }),
+              onClick: () => {
+                neutralCol = null;
+                store.set({ sort: removeColumnSort(store.get().sort, colMeta.name) });
+              },
             },
             { separator: true },
             {
@@ -337,8 +352,16 @@ HTMLWidgets.widget({
               scrollApi,
               gridApi,
               onHeaderMenu: headerMenu,
-              onSort: (name, additive) =>
-                store.set({ sort: cycleSort(store.get().sort, name, additive) }),
+              onSort: (name, additive) => {
+                if (additive) {
+                  neutralCol = null;
+                  store.set({ sort: cycleSort(store.get().sort, name, true) });
+                  return;
+                }
+                const r = plainClickSort(store.get().sort, neutralCol, name);
+                neutralCol = r.neutral;
+                store.set({ sort: r.sort });
+              },
               onCellMenu: cellMenu,
               onCount: (n) => {
                 currentRowCount = n;

@@ -27,6 +27,21 @@ export function removeColumnSort(sort, name) {
   return (sort || []).filter((s) => s.name !== name);
 }
 
+// Plain-click cycle with a NEUTRAL first step. A fresh click selects the column
+// without sorting (neutral); the next click sorts ascending, the next
+// descending, the next returns to neutral, and so on. `neutral` is the name of
+// the column currently in the no-sort selected state (or null). Returns the next
+// `{ sort, neutral }`. The grid highlights the clicked column on its own, so
+// "neutral" is simply: highlighted but absent from `sort`.
+export function plainClickSort(sort, neutral, name) {
+  const list = sort || [];
+  const sole = list.length === 1 && list[0].name === name;
+  if (sole && list[0].dir === "asc") return { sort: [{ name, dir: "desc" }], neutral: null };
+  if (sole && list[0].dir === "desc") return { sort: [], neutral: name };
+  if (neutral === name) return { sort: [{ name, dir: "asc" }], neutral: null };
+  return { sort: [], neutral: name };
+}
+
 export function cycleSort(sort, name, additive = false) {
   const list = sort || [];
   const idx = list.findIndex((s) => s.name === name);

@@ -95,7 +95,7 @@ export function createFilterDialog(host, { getExpr, onApply, onClear }) {
           "use:"
       )
     );
-    modal.appendChild(textNode("div", "dv-help-code", "AGE < 30"));
+    modal.appendChild(codeBlock("AGE < 30"));
 
     // Combine conditions with `and` / `or` rendered in monospace.
     const combine = el("p", "dv-help-p");
@@ -110,7 +110,7 @@ export function createFilterDialog(host, { getExpr, onApply, onClear }) {
 
     const ex = el("div", "dv-help-examples");
     ['SEX = "M" and AGE >= 18', 'RACE in ("WHITE", "ASIAN")'].forEach((e) =>
-      ex.appendChild(textNode("div", "dv-help-code", e))
+      ex.appendChild(codeBlock(e))
     );
     modal.appendChild(ex);
 
@@ -147,4 +147,31 @@ function textNode(tag, className, content) {
   const e = el(tag, className);
   e.textContent = content;
   return e;
+}
+
+// A content-width, syntax-highlighted example box for the help dialog.
+function codeBlock(expr) {
+  const e = el("div", "dv-help-code");
+  e.innerHTML = highlightFilter(expr);
+  return e;
+}
+
+// Light token highlighting for a filter expression: keywords (and/or/in/not),
+// quoted strings, numbers, and comparison operators. Everything else is escaped
+// and passed through, so it is safe to assign as innerHTML.
+function highlightFilter(s) {
+  const esc = (t) =>
+    t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const re =
+    /("[^"]*"|'[^']*')|(\b\d+(?:\.\d+)?\b)|(\b(?:and|or|in|not)\b)|(>=|<=|<>|!=|=|<|>)/gi;
+  let out = "";
+  let last = 0;
+  let m;
+  while ((m = re.exec(s)) !== null) {
+    out += esc(s.slice(last, m.index));
+    const cls = m[1] ? "hl-str" : m[2] ? "hl-num" : m[3] ? "hl-kw" : "hl-op";
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  return out + esc(s.slice(last));
 }

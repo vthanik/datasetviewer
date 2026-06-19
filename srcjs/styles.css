@@ -563,14 +563,30 @@
   align-items: flex-start;
 }
 .dv-help-code {
-  display: inline-block;
-  background: var(--dv-paper);
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  background: #f6f8fa;
   border: 1px solid var(--dv-rule);
   border-radius: var(--dv-radius);
   padding: 2px 8px;
   font-family: var(--dv-mono);
   font-size: 12px;
   color: var(--dv-ink);
+}
+
+/* Filter-syntax tokens (GitHub-light palette, matching the Show code dialog). */
+.dv-help-code .hl-kw {
+  color: var(--dv-signal);
+}
+.dv-help-code .hl-str {
+  color: #0a7d33;
+}
+.dv-help-code .hl-num {
+  color: #005cc5;
+}
+.dv-help-code .hl-op {
+  color: #d73a49;
 }
 
 .dv-modal {

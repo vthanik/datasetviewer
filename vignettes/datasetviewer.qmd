@@ -63,10 +63,10 @@ at home:
   **Export current view to CSV** button, a **Show code** button (`<>`) that
   reveals the dplyr pipeline for the current view, and **Filter table rows**
   (the funnel) with a badge showing the active filter.
-- **Header sort** — click a column header to sort it ascending, again for
-  descending, and once more to return to the original order. Shift-click further
-  headers to build a multi-column sort; each sorted column shows its direction
-  and priority (`AGE ↑1`, `SEX ↓2`).
+- **Header sort** — click a column header to select it, then click again to
+  cycle its sort: ascending, descending, and back to unsorted. Shift-click
+  further headers to build a multi-column sort; each sorted column shows its
+  direction and priority (`AGE ↑1`, `SEX ↓2`).
 - **Header menu** — right-click any column header to sort it (Sort Ascending /
   Descending add the column to the sort; Clear Sorting removes just that
   column), add a filter, copy the column or its header, or size the columns to

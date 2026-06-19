@@ -10,9 +10,10 @@
   collapse chevron (its list can be sorted by original order, name, or type and
   filtered by name to navigate wide datasets, without changing the grid column
   order), a property pane (Label, Name, Length, Type, Format), a
-  names-versus-labels header toggle, and click-a-header to sort (ascending,
-  descending, off) -- Shift-click adds columns for a multi-column sort, each
-  shown with its direction and priority. A right-click menu sorts per column
+  names-versus-labels header toggle, and click-a-header to sort (the first click
+  selects the column, then clicks cycle ascending, descending, unsorted) --
+  Shift-click adds columns for a multi-column sort, each shown with its direction
+  and priority. A right-click menu sorts per column
   (Sort Ascending/Descending add the column to the sort; Clear Sorting removes
   just that column) and offers per-column filters, copying a column or its
   header, and size-to-content, alongside a free-text row filter and CSV export

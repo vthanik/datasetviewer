@@ -136,7 +136,9 @@ function Grid({
     [engine]
   );
 
-  // Filter/sort change: invalidate cache, recount, jump to top, refetch.
+  // Filter/sort change: invalidate cache, recount, jump to the top ROW, refetch.
+  // Vertical only -- keep the horizontal scroll so sorting a far-right column
+  // does not yank the view back to the first column.
   useEffect(() => {
     let cancelled = false;
     cache.current.clear();
@@ -146,7 +148,7 @@ function Grid({
         if (cancelled) return;
         setRowCount(n);
         if (onCount) onCount(n);
-        ref.current?.scrollTo(0, 0);
+        ref.current?.scrollTo(0, 0, "vertical");
         fetchWindow(0, FIRST_PAGE);
       })
       .catch(() => {});
@@ -267,9 +269,15 @@ function Grid({
   const onHeaderClicked = useCallback(
     (colIndex, event) => {
       // Ignore the row-marker gutter; suppress Glide's own header selection so a
-      // Shift-click only extends the sort, not a column range highlight.
+      // Shift-click only extends the sort, not a column range highlight. Then
+      // highlight just the clicked column so the plain-click "neutral" step
+      // reads as selected (highlighted) even before any sort arrow appears.
       if (colIndex < 0 || !visible[colIndex]) return;
       if (event && event.preventDefault) event.preventDefault();
+      setSelection({
+        columns: CompactSelection.fromSingleSelection(colIndex),
+        rows: CompactSelection.empty(),
+      });
       if (onSort) onSort(visible[colIndex].name, !!(event && event.shiftKey));
     },
     [visible, onSort]

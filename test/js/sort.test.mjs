@@ -1,6 +1,54 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cycleSort, setColumnSort, removeColumnSort } from "../../srcjs/sort.js";
+import {
+  cycleSort,
+  setColumnSort,
+  removeColumnSort,
+  plainClickSort,
+} from "../../srcjs/sort.js";
+
+// ---- plainClickSort: neutral -> asc -> desc -> neutral cycle -----------
+test("plainClickSort: first click on a resting column is neutral (no sort)", () => {
+  assert.deepEqual(plainClickSort([], null, "AGE"), { sort: [], neutral: "AGE" });
+});
+
+test("plainClickSort: from neutral, the next click sorts ascending", () => {
+  assert.deepEqual(plainClickSort([], "AGE", "AGE"), {
+    sort: [{ name: "AGE", dir: "asc" }],
+    neutral: null,
+  });
+});
+
+test("plainClickSort: ascending -> descending", () => {
+  assert.deepEqual(plainClickSort([{ name: "AGE", dir: "asc" }], null, "AGE"), {
+    sort: [{ name: "AGE", dir: "desc" }],
+    neutral: null,
+  });
+});
+
+test("plainClickSort: descending -> back to neutral", () => {
+  assert.deepEqual(plainClickSort([{ name: "AGE", dir: "desc" }], null, "AGE"), {
+    sort: [],
+    neutral: "AGE",
+  });
+});
+
+test("plainClickSort: clicking a different column resets to its neutral", () => {
+  // AGE is sorted; clicking SEX drops AGE and makes SEX neutral (no sort yet).
+  assert.deepEqual(plainClickSort([{ name: "AGE", dir: "asc" }], null, "SEX"), {
+    sort: [],
+    neutral: "SEX",
+  });
+});
+
+test("plainClickSort: a sole-sorted column ignores a stale neutral name", () => {
+  // If the column is already sole-sorted (e.g. via the menu), the asc/desc
+  // branches win even when `neutral` still names it.
+  assert.deepEqual(plainClickSort([{ name: "AGE", dir: "asc" }], "AGE", "AGE"), {
+    sort: [{ name: "AGE", dir: "desc" }],
+    neutral: null,
+  });
+});
 
 // ---- plain click: single-column cycle ---------------------------------
 test("plain click: unsorted -> ascending", () => {
