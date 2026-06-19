@@ -636,9 +636,15 @@
   cursor: pointer;
   padding: 4px 11px;
 }
-.dv-modal-clear:hover {
+.dv-modal-clear:hover:not(:disabled) {
   border-color: var(--dv-signal);
   color: var(--dv-signal);
+}
+
+.dv-modal-clear:disabled {
+  color: var(--dv-ink-3);
+  border-color: var(--dv-rule-2);
+  cursor: default;
 }
 
 .dv-modal-textarea {

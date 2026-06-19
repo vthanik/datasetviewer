@@ -22,8 +22,13 @@ export function createFilterDialog(host, { getExpr, onApply, onClear }) {
     const clearBtn = el("button", "dv-modal-clear");
     clearBtn.textContent = "Clear Filter";
     clearBtn.addEventListener("click", () => {
+      // SAS behaviour: Clear resets the expression and removes any applied
+      // filter, but keeps the dialog open (it does not Cancel/close).
+      ta.value = "";
+      err.textContent = "";
       onClear();
-      close();
+      syncClear();
+      ta.focus();
     });
     const helpBtn = el("button", "dv-modal-help");
     helpBtn.textContent = "?";
@@ -35,6 +40,14 @@ export function createFilterDialog(host, { getExpr, onApply, onClear }) {
     const ta = el("textarea", "dv-modal-textarea");
     ta.placeholder = "Enter a filter expression. See the help for syntax information.";
     ta.value = prefill !== undefined ? prefill : getExpr() || "";
+
+    // Clear is enabled only when there is something to clear -- matches SAS's
+    // greyed-out state on an empty expression.
+    function syncClear() {
+      clearBtn.disabled = ta.value.trim() === "";
+    }
+    ta.addEventListener("input", syncClear);
+    syncClear();
 
     const err = el("div", "dv-modal-error");
 
