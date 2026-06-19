@@ -5,10 +5,17 @@
 /* global HTMLWidgets */
 
 import "./styles.css";
-import { createStore, initialState } from "./state.js";
+import { createStore, initialState, headerText } from "./state.js";
 import { createEngine } from "./engine/engine.js";
 import { b64ToBytes } from "./parquet_decode.js";
 import { whereFromExpr, orderFromSort } from "./sql.js";
+import { replaceColumnClause } from "./filter_expr.js";
+import {
+  shiftClickSort,
+  setColumnSort,
+  removeColumnSort,
+  plainClickSort,
+} from "./sort.js";
 import { validateFilterTypes } from "./filter_validate.js";
 import { createGrid } from "./shell/grid_view.js";
 import { createToolbar } from "./shell/toolbar.js";
@@ -21,7 +28,7 @@ import { dplyrCode } from "./codegen.js";
 import { showContextMenu } from "./shell/context_menu.js";
 import { exportCsv } from "./shell/export.js";
 import { wireShiny } from "./shiny.js";
-import { ICONS } from "./shell/icons.js";
+import { ICONS, MENU_ICONS } from "./shell/icons.js";
 
 function div(className) {
   const e = document.createElement("div");
@@ -37,6 +44,10 @@ HTMLWidgets.widget({
     el.classList.add("datasetviewer-root");
     let grid = null;
     let engine = null;
+    // The column currently in the plain-click "neutral" step (selected, not yet
+    // sorted). Any non-plain sort path (Shift-click, the right-click menu) clears
+    // it so the next plain click starts the cycle fresh.
+    let neutralCol = null;
 
     function teardown() {
       if (grid) {
@@ -55,6 +66,24 @@ HTMLWidgets.widget({
         el.innerHTML = "";
 
         const store = createStore(initialState(x));
+
+        // Commit a sort that does NOT come from a plain click (Shift-click or
+        // the right-click menu); these clear the plain-click neutral step.
+        const setSort = (next) => {
+          neutralCol = null;
+          store.set({ sort: next });
+        };
+
+        // The plain-click "neutral" step is only meaningful in the context it
+        // was entered: a filter or view change invalidates it, so reset it then
+        // (a later plain click on that column should start the cycle fresh).
+        let prevFilter = store.get().filterExpr;
+        let prevView = store.get().view;
+        store.subscribe((s) => {
+          if (s.filterExpr !== prevFilter || s.view !== prevView) neutralCol = null;
+          prevFilter = s.filterExpr;
+          prevView = s.view;
+        });
 
         // Column name -> kind, for strict type validation of filter values.
         const kindMap = () => {
@@ -160,12 +189,15 @@ HTMLWidgets.widget({
           onClear: () => store.set({ filterExpr: "" }),
         });
 
-        // Append a per-column clause to the active filter, AND-combined.
-        function appendFilter(clause) {
+        // Apply a per-column clause to the active filter. Re-applying a column
+        // REPLACES its existing clause (so the dialog never produces a
+        // contradictory `col in (...) and col = ...`); clauses for other
+        // columns are kept and AND-combined.
+        function applyColumnFilter(colName, clause) {
           const cur = (store.get().filterExpr || "").trim();
           // Parenthesize only a compound clause (the builders join with " and ").
           const c = clause.includes(" and ") ? `(${clause})` : clause;
-          const next = cur ? `${cur} and ${c}` : c;
+          const next = replaceColumnClause(cur, colName, c);
           try {
             validateFilterTypes(next, kindMap());
           } catch (e) {
@@ -178,7 +210,7 @@ HTMLWidgets.widget({
 
         const addFilterDialog = createAddFilterDialog(el, {
           getDistinct: (name) => engine.distinct(name),
-          onApply: appendFilter,
+          onApply: applyColumnFilter,
         });
 
         // SAS-style "Show code": a snapshot of the dplyr pipeline for the
@@ -212,14 +244,20 @@ HTMLWidgets.widget({
         function copyColumn(colMeta) {
           if (!engine) return;
           const state = store.get();
+          const header = headerText(colMeta, state.view);
           const where = whereFromExpr(state.filterExpr);
           const order = orderFromSort(state.sort);
           engine
             .column(colMeta.name, { where, order })
             .then((vals) => {
-              copyText(vals.map((v) => (v == null ? "" : String(v))).join("\n"));
+              const body = vals.map((v) => (v == null ? "" : String(v))).join("\n");
+              copyText(header + "\n" + body);
             })
             .catch(() => {});
+        }
+
+        function copyHeader(colMeta) {
+          copyText(headerText(colMeta, store.get().view));
         }
 
         function cellMenu({ value, rowVals, isMarker }, bounds) {
@@ -228,14 +266,14 @@ HTMLWidgets.widget({
             ? [
                 {
                   label: "Copy Row",
-                  shortcut: "⌘C",
+                  icon: MENU_ICONS.copy,
                   onClick: () => copyText((rowVals || []).join("\t")),
                 },
               ]
             : [
                 {
                   label: "Copy",
-                  shortcut: "⌘C",
+                  icon: MENU_ICONS.copy,
                   onClick: () => copyText(value),
                 },
               ];
@@ -243,33 +281,54 @@ HTMLWidgets.widget({
         }
 
         function headerMenu(colMeta, bounds) {
+          // Sort actions are per-column: Sort Asc/Desc add (or re-aim) this
+          // column within the current multi-sort; Clear Sorting removes only it.
+          const colSorted = (store.get().sort || []).some(
+            (s) => s.name === colMeta.name
+          );
           showContextMenu(bounds.x, bounds.y + bounds.height, [
             {
               label: "Copy Column",
-              shortcut: "⌘C",
+              icon: MENU_ICONS.copy,
               onClick: () => copyColumn(colMeta),
+            },
+            {
+              label: "Copy Header",
+              icon: MENU_ICONS.copy,
+              onClick: () => copyHeader(colMeta),
             },
             { separator: true },
             {
               label: "Sort Ascending",
-              onClick: () => store.set({ sort: [{ name: colMeta.name, dir: "asc" }] }),
+              icon: MENU_ICONS.sortAsc,
+              onClick: () => setSort(setColumnSort(store.get().sort, colMeta.name, "asc")),
             },
             {
               label: "Sort Descending",
-              onClick: () => store.set({ sort: [{ name: colMeta.name, dir: "desc" }] }),
+              icon: MENU_ICONS.sortDesc,
+              onClick: () => setSort(setColumnSort(store.get().sort, colMeta.name, "desc")),
+            },
+            {
+              label: "Clear Sorting",
+              icon: MENU_ICONS.clearSort,
+              disabled: !colSorted,
+              onClick: () => setSort(removeColumnSort(store.get().sort, colMeta.name)),
             },
             { separator: true },
             {
               label: "Add Filter",
+              icon: ICONS.filter,
               onClick: () => addFilterDialog.open(colMeta),
             },
             { separator: true },
             {
               label: "Size grid columns to content",
+              icon: MENU_ICONS.sizeToContent,
               onClick: () => gridApi.sizeToContent && gridApi.sizeToContent(),
             },
             {
               label: "Restore original column widths",
+              icon: MENU_ICONS.restoreWidths,
               onClick: () => gridApi.restoreWidths && gridApi.restoreWidths(),
             },
           ]);
@@ -302,6 +361,15 @@ HTMLWidgets.widget({
               scrollApi,
               gridApi,
               onHeaderMenu: headerMenu,
+              onSort: (name, additive) => {
+                if (additive) {
+                  setSort(shiftClickSort(store.get().sort, name));
+                  return;
+                }
+                const r = plainClickSort(store.get().sort, neutralCol, name);
+                neutralCol = r.neutral;
+                store.set({ sort: r.sort });
+              },
               onCellMenu: cellMenu,
               onCount: (n) => {
                 currentRowCount = n;

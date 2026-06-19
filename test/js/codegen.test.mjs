@@ -67,7 +67,7 @@ test("column names in the filter are canonicalised to real case", () => {
   );
 });
 
-test("select() comes first when a column subset is active", () => {
+test("select() comes last when a column subset is active", () => {
   const state = {
     columns: cols(["mpg", "cyl", "hp"], ["mpg", "cyl"]),
     filterExpr: "cyl = 4",
@@ -77,9 +77,28 @@ test("select() comes first when a column subset is active", () => {
     dplyrCode(state, "mtcars"),
     "library(dplyr)\n\n" +
       "mtcars |>\n" +
-      "  select(mpg, cyl) |>\n" +
       "  filter(cyl == 4) |>\n" +
-      "  arrange(desc(mpg))"
+      "  arrange(desc(mpg)) |>\n" +
+      "  select(mpg, cyl)"
+  );
+});
+
+test("filter/arrange on a hidden column stay valid (select() is last)", () => {
+  // hp is filtered/sorted but not selected. select() must come after filter()
+  // and arrange(), or the generated code drops hp before they can use it
+  // (object 'hp' not found).
+  const state = {
+    columns: cols(["mpg", "cyl", "hp"], ["mpg", "cyl"]),
+    filterExpr: "hp > 100",
+    sort: [{ name: "hp", dir: "asc" }],
+  };
+  assert.equal(
+    dplyrCode(state, "mtcars"),
+    "library(dplyr)\n\n" +
+      "mtcars |>\n" +
+      "  filter(hp > 100) |>\n" +
+      "  arrange(hp) |>\n" +
+      "  select(mpg, cyl)"
   );
 });
 
@@ -90,7 +109,7 @@ test("arrange uses desc() for descending keys", () => {
   );
 });
 
-test("full pipeline: select first, then filter, then arrange", () => {
+test("full pipeline: filter, then arrange, then select", () => {
   const state = {
     columns: cols(["mpg", "cyl", "hp", "wt"], ["mpg", "cyl"]),
     filterExpr: "mpg > 20 and cyl = 4",
@@ -100,9 +119,24 @@ test("full pipeline: select first, then filter, then arrange", () => {
     dplyrCode(state, "mtcars"),
     "library(dplyr)\n\n" +
       "mtcars |>\n" +
-      "  select(mpg, cyl) |>\n" +
       "  filter(mpg > 20 & cyl == 4) |>\n" +
-      "  arrange(desc(mpg))"
+      "  arrange(desc(mpg)) |>\n" +
+      "  select(mpg, cyl)"
+  );
+});
+
+test("multi-column sort -> arrange() with both keys in priority order", () => {
+  const state = {
+    columns: cols(["region", "age", "id"]),
+    filterExpr: "",
+    sort: [
+      { name: "region", dir: "asc" },
+      { name: "age", dir: "desc" },
+    ],
+  };
+  assert.equal(
+    dplyrCode(state, "d"),
+    "library(dplyr)\n\nd |>\n  arrange(region, desc(age))"
   );
 });
 

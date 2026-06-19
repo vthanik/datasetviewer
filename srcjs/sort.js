@@ -1,0 +1,59 @@
+// Sort cycling for a click on a column header.
+//
+// Plain click sorts by ONE column, cycling ascending -> descending -> off (data
+// order), replacing any other sort. Shift-click builds a multi-column sort:
+// each shifted column is appended at the next priority, and re-shift-clicking it
+// flips its direction, then drops it. The sort state is the ordered array the
+// rest of the app already consumes (sql ORDER BY, dplyr arrange, the priority
+// caret), so its index is the column's sort priority.
+
+// Set one column's direction within the sort, used by the right-click menu's
+// Sort Ascending / Sort Descending. If the column is already a sort key its
+// direction is updated in place (priority kept); otherwise it is appended at the
+// next priority, so sorting a new column adds to -- not replaces -- an existing
+// multi-sort.
+export function setColumnSort(sort, name, dir) {
+  const list = sort || [];
+  const idx = list.findIndex((s) => s.name === name);
+  if (idx === -1) return [...list, { name, dir }];
+  const next = list.slice();
+  next[idx] = { name, dir };
+  return next;
+}
+
+// Remove one column from the sort (the right-click "Clear Sorting", which clears
+// only the selected column); the other keys keep their order and renumber.
+export function removeColumnSort(sort, name) {
+  return (sort || []).filter((s) => s.name !== name);
+}
+
+// Plain-click cycle with a NEUTRAL first step. A fresh click selects the column
+// without sorting (neutral); the next click sorts ascending, the next
+// descending, the next returns to neutral, and so on. `neutral` is the name of
+// the column currently in the no-sort selected state (or null). Returns the next
+// `{ sort, neutral }`. The grid highlights the clicked column on its own, so
+// "neutral" is simply: highlighted but absent from `sort`.
+export function plainClickSort(sort, neutral, name) {
+  const list = sort || [];
+  const sole = list.length === 1 && list[0].name === name;
+  if (sole && list[0].dir === "asc") return { sort: [{ name, dir: "desc" }], neutral: null };
+  if (sole && list[0].dir === "desc") return { sort: [], neutral: name };
+  if (neutral === name) return { sort: [{ name, dir: "asc" }], neutral: null };
+  return { sort: [], neutral: name };
+}
+
+// Shift-click: add/cycle this column WITHIN the multi-sort, keeping the rest.
+// Absent -> appended ascending at the next priority; ascending -> descending in
+// place (priority preserved); descending -> removed. (Plain clicks go through
+// plainClickSort; this is the only multi-sort path.)
+export function shiftClickSort(sort, name) {
+  const list = sort || [];
+  const idx = list.findIndex((s) => s.name === name);
+  if (idx === -1) return [...list, { name, dir: "asc" }];
+  if (list[idx].dir === "asc") {
+    const next = list.slice();
+    next[idx] = { name, dir: "desc" };
+    return next;
+  }
+  return list.filter((_, i) => i !== idx);
+}

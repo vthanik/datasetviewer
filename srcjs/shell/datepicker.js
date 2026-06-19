@@ -208,7 +208,16 @@ export function createDateField() {
   btn.addEventListener("click", open);
   input.addEventListener("click", open);
 
-  return { el: wrap, value: () => value, destroy: close };
+  // Reset both the backing value AND the input. The dialog's Clear button finds
+  // this on the wrapper node; clearing only input.value would leave value()
+  // returning the old date, so Apply would silently re-emit a cleared filter.
+  function clear() {
+    value = "";
+    input.value = "";
+  }
+  wrap._clear = clear;
+
+  return { el: wrap, value: () => value, clear, destroy: close };
 }
 
 function navBtn(glyph, onClick) {

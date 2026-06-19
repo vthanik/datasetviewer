@@ -5,8 +5,9 @@
 //   date        -> Equal to / Less than / Greater than date pickers
 //   datetime    -> the same with datetime pickers
 //   time        -> the same with time pickers
-// Apply builds a filter expression for the column and hands it to onApply,
-// which appends it to the active filter (validated by the engine).
+// Apply builds a filter expression for the column and hands it (with the column
+// name) to onApply, which applies it to the active filter -- replacing any
+// existing clause for that column -- validated by the engine.
 
 import { createDateField } from "./datepicker.js";
 
@@ -59,8 +60,13 @@ export function createAddFilterDialog(host, { getDistinct, onApply }) {
         .querySelectorAll('input[type="checkbox"]')
         .forEach((c) => (c.checked = false));
       modal
-        .querySelectorAll(".dv-af-val, .dv-af-critinput, .dv-date-input")
+        .querySelectorAll(".dv-af-val, .dv-af-critinput")
         .forEach((i) => (i.value = ""));
+      // Custom date fields hold their value in a closure, not the input, so
+      // reset them through the hook the field registers on its wrapper.
+      modal
+        .querySelectorAll(".dv-date-field")
+        .forEach((w) => w._clear && w._clear());
       err.textContent = "";
     });
     const cancel = el("button", "dv-modal-cancel");
@@ -73,7 +79,7 @@ export function createAddFilterDialog(host, { getDistinct, onApply }) {
         return;
       }
       apply.disabled = true;
-      Promise.resolve(onApply(expr))
+      Promise.resolve(onApply(colMeta.name, expr))
         .then(() => close())
         .catch((e) => {
           apply.disabled = false;
@@ -112,8 +118,9 @@ function buildValues(modal, colMeta, getDistinct) {
       tableWrap.innerHTML = "";
       const table = el("table", "dv-af-table");
       const hr = el("tr");
+      // One "Value" column: factors arrive as character, so a separate
+      // "Formatted Value" column would only repeat it.
       hr.appendChild(thNode("Value"));
-      hr.appendChild(thNode("Formatted Value"));
       table.appendChild(hr);
       values.forEach((v) => {
         const tr = el("tr");
@@ -124,10 +131,7 @@ function buildValues(modal, colMeta, getDistinct) {
         const td1 = el("td");
         td1.appendChild(cb);
         td1.appendChild(document.createTextNode(" " + String(v)));
-        const td2 = el("td");
-        td2.textContent = String(v);
         tr.appendChild(td1);
-        tr.appendChild(td2);
         tr.addEventListener("click", (e) => {
           if (e.target !== cb) cb.checked = !cb.checked;
         });

@@ -7,15 +7,23 @@
   queried in place with DuckDB-WASM, so filter, sort, and scroll stay fast on
   large datasets without sampling rows.
 * The shell provides a column-selection panel with char/num type icons and a
-  collapse chevron, a property pane (Label, Name, Length, Type, Format,
-  Informat), a names-versus-labels header toggle, header right-click sort and
-  size-to-content, a free-text row filter, and CSV export of the current view.
+  collapse chevron (its list can be sorted by original order, name, or type and
+  filtered by name to navigate wide datasets, without changing the grid column
+  order), a property pane (Label, Name, Length, Type, Format), a
+  names-versus-labels header toggle, and click-a-header to sort (the first click
+  selects the column, then clicks cycle ascending, descending, unsorted) --
+  Shift-click adds columns for a multi-column sort, each shown with its direction
+  and priority. A right-click menu sorts per column
+  (Sort Ascending/Descending add the column to the sort; Clear Sorting removes
+  just that column) and offers per-column filters, copying a column or its
+  header, and size-to-content, alongside a free-text row filter and CSV export
+  of the current view.
 * `datasetviewerOutput()` and `renderDatasetViewer()` embed the widget in
   Shiny and publish the current filter, sort, column selection, and view mode
   as inputs.
 * The "Show code" toolbar button emits the runnable, air-formatted `dplyr`
-  pipeline (select, filter, arrange, with SQL-to-R translation) that reproduces
-  the current view.
+  pipeline (filter, arrange, then select, with SQL-to-R translation) that
+  reproduces the current view.
 * The DuckDB-WASM engine loads from a CDN by default and is fetched into the
   package at install time when reachable, so a Shiny app can serve it to
   browsers with no internet at runtime (offline / corporate deployment). The

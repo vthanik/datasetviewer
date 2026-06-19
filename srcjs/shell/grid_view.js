@@ -20,6 +20,17 @@ import { whereFromExpr, orderFromSort } from "../sql.js";
 
 const { useRef, useState, useEffect, useCallback, useMemo } = React;
 
+// Header label with its sort indicator (direction arrow + 1-based priority)
+// appended, e.g. "AGE ↑1". The single source for the caret -- both the grid
+// column titles and the size-to-content width measure use it, so the displayed
+// header and the width it is sized to can never drift. The caret stays out of
+// headerText(), so Copy Header and the property panel are unaffected.
+function titleWithSort(c, sort, view) {
+  const p = (sort || []).findIndex((s) => s.name === c.name);
+  const caret = p === -1 ? "" : ` ${sort[p].dir === "desc" ? "↓" : "↑"}${p + 1}`;
+  return headerText(c, view) + caret;
+}
+
 const COL_WIDTH = 140;
 const PREFETCH = 50;
 const FIRST_PAGE = 120;
@@ -75,6 +86,7 @@ function Grid({
   scrollApi,
   gridApi,
   onHeaderMenu,
+  onSort,
   onCellMenu,
   onCount,
 }) {
@@ -89,6 +101,10 @@ function Grid({
     columns: CompactSelection.empty(),
     rows: CompactSelection.empty(),
   });
+  // The header-highlighted column is tracked by NAME, not by a positional
+  // index: hiding/showing columns reindexes `visible`, so an index would point
+  // at the wrong column. The Glide column selection is derived from this name.
+  const [hlName, setHlName] = useState(null);
 
   useEffect(() => store.subscribe(setSnap), [store]);
 
@@ -124,23 +140,30 @@ function Grid({
     [engine]
   );
 
-  // Filter/sort change: invalidate cache, recount, jump to top, refetch.
+  // Row count depends only on the filter (WHERE); sorting cannot change it, so
+  // this is keyed on `where` alone -- a sort no longer triggers a full re-count.
   useEffect(() => {
     let cancelled = false;
-    cache.current.clear();
     engine
       .count(where)
       .then((n) => {
         if (cancelled) return;
         setRowCount(n);
         if (onCount) onCount(n);
-        ref.current?.scrollTo(0, 0);
-        fetchWindow(0, FIRST_PAGE);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
+  }, [where, engine]);
+
+  // Filter OR sort change: invalidate the cache, jump to the top ROW (vertical
+  // only -- keep the horizontal scroll so sorting a far-right column does not
+  // yank the view back to the first column), and refetch the first page.
+  useEffect(() => {
+    cache.current.clear();
+    ref.current?.scrollTo(0, 0, "vertical");
+    fetchWindow(0, FIRST_PAGE);
   }, [where, order, engine, fetchWindow]);
 
   useEffect(() => {
@@ -167,8 +190,12 @@ function Grid({
     if (!gridApi) return undefined;
     gridApi.sizeToContent = () => {
       const widths = {};
+      const sort = store.get().sort;
+      const view = store.get().view;
       visibleRef.current.forEach((c, ci) => {
-        let max = String(headerText(c, store.get().view)).length;
+        // Measure the header WITH its sort indicator, or the column sizes too
+        // narrow and the arrow + priority get clipped.
+        let max = titleWithSort(c, sort, view).length;
         cache.current.forEach((row) => {
           const v = row[c.origIndex];
           const len = v === null || v === undefined ? 0 : String(v).length;
@@ -185,11 +212,11 @@ function Grid({
   const gridColumns = useMemo(
     () =>
       visible.map((c) => ({
-        title: headerText(c, snap.view),
+        title: titleWithSort(c, snap.sort, snap.view),
         id: c.name,
         width: colWidths[c.name] || COL_WIDTH,
       })),
-    [visible, snap.view, colWidths]
+    [visible, snap.view, snap.sort, colWidths]
   );
 
   const onColumnResize = useCallback((column, newSize) => {
@@ -238,14 +265,27 @@ function Grid({
   const onHeaderContextMenu = useCallback(
     (colIndex, event) => {
       if (event.preventDefault) event.preventDefault();
-      // Highlight the whole column.
-      setSelection({
-        columns: CompactSelection.fromSingleSelection(colIndex),
-        rows: CompactSelection.empty(),
-      });
+      // Highlight the whole column (by name; see hlName).
+      setHlName(visible[colIndex].name);
+      setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
       if (onHeaderMenu) onHeaderMenu(visible[colIndex], event.bounds);
     },
     [visible, onHeaderMenu]
+  );
+
+  const onHeaderClicked = useCallback(
+    (colIndex, event) => {
+      // Ignore the row-marker gutter; suppress Glide's own header selection so a
+      // Shift-click only extends the sort, not a column range highlight. Then
+      // highlight just the clicked column so the plain-click "neutral" step
+      // reads as selected (highlighted) even before any sort arrow appears.
+      if (colIndex < 0 || !visible[colIndex]) return;
+      if (event && event.preventDefault) event.preventDefault();
+      setHlName(visible[colIndex].name);
+      setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
+      if (onSort) onSort(visible[colIndex].name, !!(event && event.shiftKey));
+    },
+    [visible, onSort]
   );
 
   const onCellContextMenu = useCallback(
@@ -255,6 +295,7 @@ function Grid({
       const cached = cache.current.get(row);
       if (col < 0) {
         // Row number (marker): highlight the whole row, offer Copy Row.
+        setHlName(null);
         setSelection({
           rows: CompactSelection.fromSingleSelection(row),
           columns: CompactSelection.empty(),
@@ -281,6 +322,14 @@ function Grid({
   const contentHeight = HEADER_H + rowCount * ROW_H + (hOverflow ? HSCROLL_PAD : 0);
   const gridHeight = Math.min(size.height, contentHeight);
 
+  // Derive the column highlight from the tracked name so it follows the column
+  // across hide/show; fall back to Glide's own column selection when none.
+  const hlIdx = hlName ? visible.findIndex((c) => c.name === hlName) : -1;
+  const gridSelection =
+    hlIdx >= 0
+      ? { ...selection, columns: CompactSelection.fromSingleSelection(hlIdx) }
+      : selection;
+
   const editor =
     size.width > 0 && size.height > 0
       ? React.createElement(DataEditor, {
@@ -290,14 +339,19 @@ function Grid({
           rows: rowCount,
           getCellContent,
           onVisibleRegionChanged,
+          onHeaderClicked,
           onHeaderContextMenu,
           onCellContextMenu,
           onColumnResize,
           rowMarkers: "clickable-number", // row numbers; click one to select the row
           rowHeight: ROW_H,
           headerHeight: HEADER_H,
-          gridSelection: selection,
-          onGridSelectionChange: setSelection,
+          gridSelection,
+          onGridSelectionChange: (sel) => {
+            // A body interaction (cell/row) drops the header highlight.
+            setHlName(null);
+            setSelection(sel);
+          },
           rowSelect: "single", // one row at a time, no multi-select
           rowSelectionMode: "single",
           smoothScrollX: true,

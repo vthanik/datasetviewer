@@ -1,6 +1,6 @@
-
-
-<!-- README.md is generated from README.qmd. Please edit that file -->
+<!-- Edited by hand. The viewer auto-prints an htmlwidget, so rendering a
+README source would launch a browser under R CMD check (CRAN reject); there is
+deliberately no README.Rmd/README.qmd. -->
 
 # datasetviewer
 
@@ -15,8 +15,8 @@
 An interactive, SAS Studio-style dataset viewer for R. `datasetviewer` renders a dataset in a fast, scrollable grid modelled on the SAS Studio table viewer, from one htmlwidget that runs in interactive Shiny apps and in static HTML documents.
 
 - **Fast on large data, no sampling.** The data is sent to the browser as Parquet and queried in place with DuckDB-WASM, so filtering, sorting, and scrolling stay responsive on datasets that overwhelm DOM-bound grids or server-paged tables.
-- **SAS Studio layout.** A column-selection panel with char/num type icons and a collapse toggle, a property pane (Label, Name, Length, Type, Format, Informat), a names-versus-labels header toggle, header right-click sort, and a free-text “Filter Table Rows” expression.
-- **Clinical metadata.** With the sibling [`artoo`](https://github.com/vthanik/artoo) package installed, column labels, formats, informats, and storage lengths are read from a labelled or CDISC-conformed frame. Plain data frames work with zero `artoo` dependency.
+- **SAS Studio layout.** A column-selection panel with char/num type icons and a collapse toggle, a property pane (Label, Name, Length, Type, Format), a names-versus-labels header toggle, click-a-header to sort (Shift-click for multi-column sort), and a free-text “Filter Table Rows” expression.
+- **Clinical metadata.** With the sibling [`artoo`](https://github.com/vthanik/artoo) package installed, column labels, formats, and storage lengths are read from a labelled or CDISC-conformed frame. Plain data frames work with zero `artoo` dependency.
 - **Runs offline / behind a firewall.** The grid, filters, code view, and CSV export are bundled in the package. The DuckDB-WASM engine loads from a CDN by default but is fetched into the package at install time, so a Shiny app can serve it to browsers with no internet at runtime.
 
 ## Installation
@@ -49,7 +49,7 @@ adsl <- artoo::read_dataset("adsl.parquet")
 dataset_viewer(adsl, view = "labels")
 ```
 
-Right-click a column header to sort or add a filter; click the funnel in the toolbar to edit the filter expression directly (for example `AGE > 50 and SEX = "M"`).
+Click a column header to select it, then click again to cycle its sort — ascending, descending, then back to unsorted. **Shift-click** additional headers to build a multi-column sort, each shown with its direction and priority (`AGE ↑1`, `SEX ↓2`). In the right-click menu, **Sort Ascending/Descending** add that column to the sort and **Clear Sorting** removes just that column; you can also add a filter or copy the column or its header. Click the funnel in the toolbar to edit the filter expression directly (for example `AGE > 50 and SEX = "M"`).
 
 ### In Shiny
 

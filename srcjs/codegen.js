@@ -149,14 +149,15 @@ export function dplyrCode(state, dataName) {
   (state.columns || []).forEach((c) => (canon[c.name.toLowerCase()] = c.name));
 
   const steps = [];
-  // select() comes first when a column subset is active: the chosen columns
-  // define the view, and it mirrors the order a reader expects.
-  const sel = selectKeys(state);
-  if (sel.length) steps.push(verbStep("select", sel));
   const cond = dplyrFilterFromExpr(state.filterExpr, canon);
   if (cond) steps.push(verbStep("filter", [cond]));
   const ord = arrangeKeys(state.sort);
   if (ord.length) steps.push(verbStep("arrange", ord));
+  // select() comes last so filter()/arrange() may reference a column the view
+  // hides -- a hidden column can still drive the filter or the sort, and
+  // narrowing first would drop it before those verbs run.
+  const sel = selectKeys(state);
+  if (sel.length) steps.push(verbStep("select", sel));
 
   const pipeline = steps.length ? `${name} |>\n` + steps.join(" |>\n") : name;
   return `library(dplyr)\n\n${pipeline}`;

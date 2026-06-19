@@ -1,6 +1,7 @@
 // Left-bottom property panel: a Property/Value table for the active column,
-// mirroring the SAS Studio attribute pane (Label, Name, Length, Type, Format,
-// Informat).
+// mirroring the SAS Studio attribute pane (Label, Name, Length, Type, Format).
+// Informat is omitted: it is a SAS read-time parsing concept with no meaning
+// for already-loaded R data.
 
 const FIELDS = [
   ["Label", "label"],
@@ -8,7 +9,6 @@ const FIELDS = [
   ["Length", "length"],
   ["Type", "type"],
   ["Format", "format"],
-  ["Informat", "informat"],
 ];
 
 export function createPropertyPanel(container, store) {
