@@ -1,8 +1,8 @@
 # Changelog
 
-## datasetviewer 0.0.0.9000
+## datasetviewer 0.1.0
 
-- Initial development version.
+- Initial release.
 - [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
   renders a SAS Studio-style interactive grid for a data frame, an
   artoo-conformed frame, or a file path read via
