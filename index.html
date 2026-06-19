@@ -63,9 +63,9 @@
 <li>
 <strong>Fast on large data, no sampling.</strong> The data is sent to the browser as Parquet and queried in place with DuckDB-WASM, so filtering, sorting, and scrolling stay responsive on datasets that overwhelm DOM-bound grids or server-paged tables.</li>
 <li>
-<strong>SAS Studio layout.</strong> A column-selection panel with char/num type icons and a collapse toggle, a property pane (Label, Name, Length, Type, Format, Informat), a names-versus-labels header toggle, header right-click sort, and a free-text “Filter Table Rows” expression.</li>
+<strong>SAS Studio layout.</strong> A column-selection panel with char/num type icons and a collapse toggle, a property pane (Label, Name, Length, Type, Format), a names-versus-labels header toggle, click-a-header to sort (Shift-click for multi-column sort), and a free-text “Filter Table Rows” expression.</li>
 <li>
-<strong>Clinical metadata.</strong> With the sibling <a href="https://github.com/vthanik/artoo" class="external-link"><code>artoo</code></a> package installed, column labels, formats, informats, and storage lengths are read from a labelled or CDISC-conformed frame. Plain data frames work with zero <code>artoo</code> dependency.</li>
+<strong>Clinical metadata.</strong> With the sibling <a href="https://github.com/vthanik/artoo" class="external-link"><code>artoo</code></a> package installed, column labels, formats, and storage lengths are read from a labelled or CDISC-conformed frame. Plain data frames work with zero <code>artoo</code> dependency.</li>
 <li>
 <strong>Runs offline / behind a firewall.</strong> The grid, filters, code view, and CSV export are bundled in the package. The DuckDB-WASM engine loads from a CDN by default but is fetched into the package at install time, so a Shiny app can serve it to browsers with no internet at runtime.</li>
 </ul>
@@ -94,7 +94,7 @@
 <span><span class="co"># an artoo-conformed frame, headers shown as labels</span></span>
 <span><span class="va">adsl</span> <span class="op">&lt;-</span> <span class="fu">artoo</span><span class="fu">::</span><span class="fu"><a href="https://vthanik.github.io/artoo/reference/read_dataset.html" class="external-link">read_dataset</a></span><span class="op">(</span><span class="st">"adsl.parquet"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dataset_viewer.html">dataset_viewer</a></span><span class="op">(</span><span class="va">adsl</span>, view <span class="op">=</span> <span class="st">"labels"</span><span class="op">)</span></span></code></pre></div>
-<p>Right-click a column header to sort or add a filter; click the funnel in the toolbar to edit the filter expression directly (for example <code>AGE &gt; 50 and SEX = "M"</code>).</p>
+<p>Click a column header to select it, then click again to cycle its sort — ascending, descending, then back to unsorted. <strong>Shift-click</strong> additional headers to build a multi-column sort, each shown with its direction and priority (<code>AGE ↑1</code>, <code>SEX ↓2</code>). In the right-click menu, <strong>Sort Ascending/Descending</strong> add that column to the sort and <strong>Clear Sorting</strong> removes just that column; you can also add a filter or copy the column or its header. Click the funnel in the toolbar to edit the filter expression directly (for example <code>AGE &gt; 50 and SEX = "M"</code>).</p>
 <div class="section level3">
 <h3 id="in-shiny">In Shiny<a class="anchor" aria-label="anchor" href="#in-shiny"></a>
 </h3>

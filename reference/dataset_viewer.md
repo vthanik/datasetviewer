@@ -25,7 +25,7 @@ dataset_viewer(
   file path read via
   [`artoo::read_dataset()`](https://vthanik.github.io/artoo/reference/read_dataset.html)
   (xpt, Dataset-JSON, NDJSON, Parquet, RDS). An artoo-conformed frame
-  supplies labels, formats, and informats to the property panel; a plain
+  supplies labels, formats, and lengths to the property panel; a plain
   frame uses synthesized metadata.
 
 - ...:

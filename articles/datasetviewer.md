@@ -42,16 +42,24 @@ already at home:
 - **Columns panel** (left) — a checklist of every column with a type
   chip (`A` for character, `#` for numeric, a calendar for dates).
   Uncheck a column to hide it from the grid; the data is never reloaded.
+  Sort the list by original order, name, or type, and filter it by name
+  to find columns in a wide dataset (the list order is a navigation aid;
+  the grid column order is unchanged).
 - **Property pane** (lower left) — select a column to inspect its
-  `Label`, `Name`, `Length`, `Type`, `Format`, and `Informat`, the same
-  attributes `PROC CONTENTS` reports.
+  `Label`, `Name`, `Length`, `Type`, and `Format`, the same attributes
+  `PROC CONTENTS` reports.
 - **Toolbar** (top) — the names-versus-labels **View** dropdown, an
   **Export current view to CSV** button, a **Show code** button (`<>`)
   that reveals the dplyr pipeline for the current view, and **Filter
   table rows** (the funnel) with a badge showing the active filter.
-- **Header menu** — right-click any column header to sort ascending or
-  descending, add a filter, copy the column, or size the columns to
-  content.
+- **Header sort** — click a column header to select it, then click again
+  to cycle its sort: ascending, descending, and back to unsorted.
+  Shift-click further headers to build a multi-column sort; each sorted
+  column shows its direction and priority (`AGE ↑1`, `SEX ↓2`).
+- **Header menu** — right-click any column header to sort it (Sort
+  Ascending / Descending add the column to the sort; Clear Sorting
+  removes just that column), add a filter, copy the column or its
+  header, or size the columns to content.
 - **Status bar** — the total row and column counts, and the filtered
   count once a filter is active.
 
@@ -67,9 +75,9 @@ A plain data frame has no labels, so the property pane shows names only.
 Point the viewer at a labelled or CDISC-conformed frame and the metadata
 comes to life. With the companion
 [`artoo`](https://vthanik.github.io/artoo/) package installed, column
-labels, formats, informats, and storage lengths are read straight from
-the frame and shown in the property pane — and you can set the header
-row to use labels instead of names.
+labels, formats, and storage lengths are read straight from the frame
+and shown in the property pane — and you can set the header row to use
+labels instead of names.
 
 ``` r
 
@@ -112,18 +120,22 @@ within a sampled window.
 Exploration in the grid is convenient, but a report needs to be
 reproducible. The **Show code** button (`<>` in the toolbar) opens a
 dialog with the runnable [`dplyr`](https://dplyr.tidyverse.org/)
-pipeline that reproduces the current view — the column selection, the
-filter, and the sort, in order:
+pipeline that reproduces the current view — the filter, the sort, and
+the column selection, in order:
 
 ``` r
 
 library(dplyr)
 
 mtcars |>
-  select(cyl, hp, wt, mpg) |>
   filter(mpg >= 20) |>
-  arrange(desc(hp))
+  arrange(desc(hp)) |>
+  select(cyl, hp, wt, mpg)
 ```
+
+[`select()`](https://dplyr.tidyverse.org/reference/select.html) comes
+last so the filter and the sort can reference a column the view hides —
+narrowing first would drop it before those steps run.
 
 The snippet is air-formatted and syntax-highlighted, with a **Copy**
 button. SQL idioms are translated to their R equivalents — `IN (...)`
