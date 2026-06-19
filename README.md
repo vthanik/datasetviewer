@@ -1,6 +1,6 @@
-
-
-<!-- README.md is generated from README.qmd. Please edit that file -->
+<!-- Edited by hand. The viewer auto-prints an htmlwidget, so rendering a
+README source would launch a browser under R CMD check (CRAN reject); there is
+deliberately no README.Rmd/README.qmd. -->
 
 # datasetviewer
 
@@ -49,7 +49,7 @@ adsl <- artoo::read_dataset("adsl.parquet")
 dataset_viewer(adsl, view = "labels")
 ```
 
-Click a column header to sort it (again for descending, once more to clear); **Shift-click** additional headers to build a multi-column sort, each shown with its direction and priority (`AGE ↑1`, `SEX ↓2`). Right-click for the header menu to add a filter, copy the column or its header, or clear the sort. Click the funnel in the toolbar to edit the filter expression directly (for example `AGE > 50 and SEX = "M"`).
+Click a column header to sort it (again for descending, once more to clear); **Shift-click** additional headers to build a multi-column sort, each shown with its direction and priority (`AGE ↑1`, `SEX ↓2`). In the right-click menu, **Sort Ascending/Descending** add that column to the sort and **Clear Sorting** removes just that column; you can also add a filter or copy the column or its header. Click the funnel in the toolbar to edit the filter expression directly (for example `AGE > 50 and SEX = "M"`).
 
 ### In Shiny
 

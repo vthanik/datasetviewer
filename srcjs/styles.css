@@ -49,9 +49,9 @@
   /* Corner radius scale -- Positron-light, uniform across every surface. On
      :root (not .datasetviewer-root) so the body-appended context menu can read
      it too. */
-  --dv-radius-sm: 3px;
-  --dv-radius: 4px;
-  --dv-radius-lg: 6px;
+  --dv-radius-sm: 2px;
+  --dv-radius: 3px;
+  --dv-radius-lg: 4px;
 }
 
 .datasetviewer-root {

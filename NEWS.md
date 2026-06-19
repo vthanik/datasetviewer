@@ -10,9 +10,11 @@
   collapse chevron, a property pane (Label, Name, Length, Type, Format), a
   names-versus-labels header toggle, and click-a-header to sort (ascending,
   descending, off) -- Shift-click adds columns for a multi-column sort, each
-  shown with its direction and priority. A right-click menu offers per-column
-  filters, copying a column or its header, clear sorting, and size-to-content,
-  alongside a free-text row filter and CSV export of the current view.
+  shown with its direction and priority. A right-click menu sorts per column
+  (Sort Ascending/Descending add the column to the sort; Clear Sorting removes
+  just that column) and offers per-column filters, copying a column or its
+  header, and size-to-content, alongside a free-text row filter and CSV export
+  of the current view.
 * `datasetviewerOutput()` and `renderDatasetViewer()` embed the widget in
   Shiny and publish the current filter, sort, column selection, and view mode
   as inputs.

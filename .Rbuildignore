@@ -19,7 +19,6 @@
 ^design\.md$
 ^[Hh]andoff.*\.md$
 ^_archive$
-^README\.qmd$
 ^\.github$
 ^_pkgdown\.yml$
 ^pkgdown$

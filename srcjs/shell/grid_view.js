@@ -20,6 +20,17 @@ import { whereFromExpr, orderFromSort } from "../sql.js";
 
 const { useRef, useState, useEffect, useCallback, useMemo } = React;
 
+// Header label with its sort indicator (direction arrow + 1-based priority)
+// appended, e.g. "AGE ↑1". The single source for the caret -- both the grid
+// column titles and the size-to-content width measure use it, so the displayed
+// header and the width it is sized to can never drift. The caret stays out of
+// headerText(), so Copy Header and the property panel are unaffected.
+function titleWithSort(c, sort, view) {
+  const p = (sort || []).findIndex((s) => s.name === c.name);
+  const caret = p === -1 ? "" : ` ${sort[p].dir === "desc" ? "↓" : "↑"}${p + 1}`;
+  return headerText(c, view) + caret;
+}
+
 const COL_WIDTH = 140;
 const PREFETCH = 50;
 const FIRST_PAGE = 120;
@@ -168,8 +179,12 @@ function Grid({
     if (!gridApi) return undefined;
     gridApi.sizeToContent = () => {
       const widths = {};
+      const sort = store.get().sort;
+      const view = store.get().view;
       visibleRef.current.forEach((c, ci) => {
-        let max = String(headerText(c, store.get().view)).length;
+        // Measure the header WITH its sort indicator, or the column sizes too
+        // narrow and the arrow + priority get clipped.
+        let max = titleWithSort(c, sort, view).length;
         cache.current.forEach((row) => {
           const v = row[c.origIndex];
           const len = v === null || v === undefined ? 0 : String(v).length;
@@ -183,22 +198,15 @@ function Grid({
     return undefined;
   });
 
-  const gridColumns = useMemo(() => {
-    const sort = snap.sort || [];
-    return visible.map((c) => {
-      // Per-column sort indicator (direction arrow + 1-based priority) in the
-      // title only -- never in headerText, so "Copy Header" and the property
-      // panel stay clean.
-      const p = sort.findIndex((s) => s.name === c.name);
-      const caret =
-        p === -1 ? "" : ` ${sort[p].dir === "desc" ? "↓" : "↑"}${p + 1}`;
-      return {
-        title: headerText(c, snap.view) + caret,
+  const gridColumns = useMemo(
+    () =>
+      visible.map((c) => ({
+        title: titleWithSort(c, snap.sort, snap.view),
         id: c.name,
         width: colWidths[c.name] || COL_WIDTH,
-      };
-    });
-  }, [visible, snap.view, snap.sort, colWidths]);
+      })),
+    [visible, snap.view, snap.sort, colWidths]
+  );
 
   const onColumnResize = useCallback((column, newSize) => {
     setColWidths((w) => ({ ...w, [column.id]: newSize }));

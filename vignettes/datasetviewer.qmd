@@ -64,8 +64,10 @@ at home:
   descending, and once more to return to the original order. Shift-click further
   headers to build a multi-column sort; each sorted column shows its direction
   and priority (`AGE ↑1`, `SEX ↓2`).
-- **Header menu** — right-click any column header to add a filter, copy the
-  column or its header, clear the sort, or size the columns to content.
+- **Header menu** — right-click any column header to sort it (Sort Ascending /
+  Descending add the column to the sort; Clear Sorting removes just that
+  column), add a filter, copy the column or its header, or size the columns to
+  content.
 - **Status bar** — the total row and column counts, and the filtered count
   once a filter is active.
 

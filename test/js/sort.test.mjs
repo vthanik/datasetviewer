@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cycleSort } from "../../srcjs/sort.js";
+import { cycleSort, setColumnSort, removeColumnSort } from "../../srcjs/sort.js";
 
 // ---- plain click: single-column cycle ---------------------------------
 test("plain click: unsorted -> ascending", () => {
@@ -74,4 +74,49 @@ test("shift click: descending -> removed, others keep order and renumber", () =>
 test("shift click never duplicates a column already in the sort", () => {
   const out = cycleSort([{ name: "AGE", dir: "asc" }], "AGE", true);
   assert.equal(out.filter((s) => s.name === "AGE").length, 1);
+});
+
+// ---- setColumnSort: right-click Sort Ascending / Descending -----------
+test("setColumnSort: empty -> single key", () => {
+  assert.deepEqual(setColumnSort([], "AGE", "asc"), [{ name: "AGE", dir: "asc" }]);
+});
+
+test("setColumnSort: a new column is appended at the next priority", () => {
+  assert.deepEqual(
+    setColumnSort([{ name: "REGION", dir: "asc" }], "AGE", "desc"),
+    [
+      { name: "REGION", dir: "asc" },
+      { name: "AGE", dir: "desc" },
+    ]
+  );
+});
+
+test("setColumnSort: an existing column's direction updates in place", () => {
+  const multi = [
+    { name: "REGION", dir: "asc" },
+    { name: "AGE", dir: "asc" },
+  ];
+  assert.deepEqual(setColumnSort(multi, "REGION", "desc"), [
+    { name: "REGION", dir: "desc" },
+    { name: "AGE", dir: "asc" },
+  ]);
+});
+
+// ---- removeColumnSort: right-click Clear Sorting ----------------------
+test("removeColumnSort: removes the named key, others keep order", () => {
+  const multi = [
+    { name: "REGION", dir: "asc" },
+    { name: "AGE", dir: "desc" },
+    { name: "SEX", dir: "asc" },
+  ];
+  assert.deepEqual(removeColumnSort(multi, "AGE"), [
+    { name: "REGION", dir: "asc" },
+    { name: "SEX", dir: "asc" },
+  ]);
+});
+
+test("removeColumnSort: an absent column leaves the sort unchanged", () => {
+  const multi = [{ name: "REGION", dir: "asc" }];
+  assert.deepEqual(removeColumnSort(multi, "AGE"), [{ name: "REGION", dir: "asc" }]);
+  assert.deepEqual(removeColumnSort([], "AGE"), []);
 });

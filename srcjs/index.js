@@ -10,7 +10,7 @@ import { createEngine } from "./engine/engine.js";
 import { b64ToBytes } from "./parquet_decode.js";
 import { whereFromExpr, orderFromSort } from "./sql.js";
 import { replaceColumnClause } from "./filter_expr.js";
-import { cycleSort } from "./sort.js";
+import { cycleSort, setColumnSort, removeColumnSort } from "./sort.js";
 import { validateFilterTypes } from "./filter_validate.js";
 import { createGrid } from "./shell/grid_view.js";
 import { createToolbar } from "./shell/toolbar.js";
@@ -254,7 +254,11 @@ HTMLWidgets.widget({
         }
 
         function headerMenu(colMeta, bounds) {
-          const sorted = (store.get().sort || []).length > 0;
+          // Sort actions are per-column: Sort Asc/Desc add (or re-aim) this
+          // column within the current multi-sort; Clear Sorting removes only it.
+          const colSorted = (store.get().sort || []).some(
+            (s) => s.name === colMeta.name
+          );
           showContextMenu(bounds.x, bounds.y + bounds.height, [
             {
               label: "Copy Column",
@@ -270,18 +274,21 @@ HTMLWidgets.widget({
             {
               label: "Sort Ascending",
               icon: MENU_ICONS.sortAsc,
-              onClick: () => store.set({ sort: [{ name: colMeta.name, dir: "asc" }] }),
+              onClick: () =>
+                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "asc") }),
             },
             {
               label: "Sort Descending",
               icon: MENU_ICONS.sortDesc,
-              onClick: () => store.set({ sort: [{ name: colMeta.name, dir: "desc" }] }),
+              onClick: () =>
+                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "desc") }),
             },
             {
               label: "Clear Sorting",
               icon: MENU_ICONS.clearSort,
-              disabled: !sorted,
-              onClick: () => store.set({ sort: [] }),
+              disabled: !colSorted,
+              onClick: () =>
+                store.set({ sort: removeColumnSort(store.get().sort, colMeta.name) }),
             },
             { separator: true },
             {
