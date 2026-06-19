@@ -1,16 +1,17 @@
 // Left "Columns" panel: a Select-all toggle plus a checkbox list of columns
 // with char/num/date type icons. The header carries a collapse chevron that
-// hides the whole sidebar. A "Sort by" dropdown and a "Filter" box (Positron's
-// Columns tab) reorder and filter the LIST only -- a navigation aid; the grid
-// columns and the CSV export keep their original order. Clicking a column row
-// makes it the active column shown in the property panel.
+// hides the whole sidebar. A Sort icon menu and a "Filter" box reorder and
+// filter the LIST only -- a navigation aid; the grid columns and the CSV export
+// keep their original order. Clicking a column row makes it the active column
+// shown in the property panel.
 //
 // The list DOM is built once; store changes only update checkbox/active/label
 // state in place, so a click never destroys and rebuilds hundreds of rows
 // (no focus/scroll loss, O(1) work per toggle on wide datasets). Sorting moves
 // the existing row nodes; filtering toggles their display -- neither rebuilds.
 
-import { typeIcon, ICONS } from "./icons.js";
+import { typeIcon, ICONS, MENU_ICONS } from "./icons.js";
+import { showContextMenu } from "./context_menu.js";
 import { headerText, columnSortOrder } from "../state.js";
 
 const SORT_OPTIONS = [
@@ -44,20 +45,15 @@ export function createColumnsPanel(container, store, { onCollapse }) {
   header.appendChild(chevron);
   container.appendChild(header);
 
-  // Sort + filter tools, stacked (the sidebar is narrow and user-resizable).
+  // Filter box (with a leading magnifier) and a Sort icon that opens a menu,
+  // laid out as one compact row.
   const tools = el("div", "dv-cols-tools");
-  const sort = el("select", "dv-cols-sort");
-  SORT_OPTIONS.forEach(([value, lab]) => {
-    const o = document.createElement("option");
-    o.value = value;
-    o.textContent = lab;
-    sort.appendChild(o);
-  });
-  sort.addEventListener("change", () => {
-    sortMode = sort.value;
-    applyOrder(store.get());
-  });
-  tools.appendChild(sort);
+
+  const filterWrap = el("div", "dv-cols-filter-wrap");
+  const searchIcon = el("span", "dv-cols-search-icon");
+  searchIcon.innerHTML = ICONS.search;
+  searchIcon.setAttribute("aria-hidden", "true");
+  filterWrap.appendChild(searchIcon);
   const filter = el("input", "dv-cols-filter");
   filter.type = "text";
   filter.placeholder = "Filter";
@@ -66,7 +62,36 @@ export function createColumnsPanel(container, store, { onCollapse }) {
     filterText = filter.value;
     applyFilter(store.get());
   });
-  tools.appendChild(filter);
+  filterWrap.appendChild(filter);
+  tools.appendChild(filterWrap);
+
+  // Sort: an icon button opening a menu of the SORT_OPTIONS, the active one
+  // checkmarked. The button title reflects the current mode so the icon-only
+  // control still exposes its state.
+  const sortBtn = el("button", "dv-icon-btn dv-cols-sortbtn");
+  sortBtn.innerHTML = ICONS.sort;
+  sortBtn.title = "Sort columns";
+  sortBtn.setAttribute("aria-label", "Sort columns");
+  sortBtn.setAttribute("aria-haspopup", "menu");
+  sortBtn.addEventListener("click", () => {
+    const r = sortBtn.getBoundingClientRect();
+    showContextMenu(
+      r.left,
+      r.bottom + 4,
+      SORT_OPTIONS.map(([value, label]) => ({
+        label,
+        icon: value === sortMode ? MENU_ICONS.check : "",
+        onClick: () => {
+          sortMode = value;
+          sortBtn.title = label;
+          applyOrder(store.get());
+        },
+      })),
+      sortBtn
+    );
+  });
+  tools.appendChild(sortBtn);
+
   container.appendChild(tools);
 
   const list = el("div", "dv-cols-list");
