@@ -288,19 +288,35 @@
 
 .dv-cols-tools {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 5px;
   padding: 0 8px 8px 12px;
   flex: 0 0 auto;
 }
 
-.dv-cols-sort,
+.dv-cols-filter-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dv-cols-search-icon {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--dv-ink-3);
+  pointer-events: none;
+}
+
 .dv-cols-filter {
   width: 100%;
   box-sizing: border-box;
   font-family: var(--dv-sans);
   font-size: 12px;
-  padding: 4px 7px;
+  padding: 4px 7px 4px 26px;
   border: 1px solid var(--dv-rule);
   border-radius: var(--dv-radius);
   background: var(--dv-canvas);
@@ -311,10 +327,13 @@
   color: var(--dv-ink-3);
 }
 
-.dv-cols-filter:focus,
-.dv-cols-sort:focus {
+.dv-cols-filter:focus {
   outline: none;
   border-color: var(--dv-signal);
+}
+
+.dv-cols-sortbtn {
+  flex: 0 0 auto;
 }
 
 .dv-cols-list {
