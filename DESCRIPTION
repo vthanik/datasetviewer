@@ -32,6 +32,8 @@ Suggests:
     testthat (>= 3.0.0),
     tibble,
     withr
+Remotes:
+    vthanik/artoo
 Config/testthat/edition: 3
 VignetteBuilder: quarto
 URL: https://github.com/vthanik/datasetviewer,
