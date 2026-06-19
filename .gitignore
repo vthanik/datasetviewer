@@ -13,6 +13,10 @@ tasks/
 # Claude Code local harness state (settings, schedule locks)
 .claude/
 
+# R build artefacts (R CMD build / check output)
+*.tar.gz
+*.Rcheck/
+
 # R session/state
 *.Rproj
 .Rproj.user/

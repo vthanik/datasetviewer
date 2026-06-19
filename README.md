@@ -8,7 +8,7 @@
 
 <!-- badges: start -->
 
-[![CRAN status](https://www.r-pkg.org/badges/version/datasetviewer)](https://CRAN.R-project.org/package=datasetviewer) [![R-CMD-check](https://github.com/vthanik/datasetviewer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/vthanik/datasetviewer/actions/workflows/R-CMD-check.yaml) [![Codecov test coverage](https://codecov.io/gh/vthanik/datasetviewer/graph/badge.svg)](https://app.codecov.io/gh/vthanik/datasetviewer) [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) <!-- badges: end -->
+[![CRAN status](https://www.r-pkg.org/badges/version/datasetviewer)](https://CRAN.R-project.org/package=datasetviewer) [![R-CMD-check](https://github.com/vthanik/datasetviewer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/vthanik/datasetviewer/actions/workflows/R-CMD-check.yaml) [![Codecov test coverage](https://codecov.io/gh/vthanik/datasetviewer/graph/badge.svg)](https://app.codecov.io/gh/vthanik/datasetviewer) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) <!-- badges: end -->
 
 </div>
 
