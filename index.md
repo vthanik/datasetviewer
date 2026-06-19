@@ -1,0 +1,99 @@
+# datasetviewer
+
+An interactive, SAS Studio-style dataset viewer for R. `datasetviewer`
+renders a dataset in a fast, scrollable grid modelled on the SAS Studio
+table viewer, from one htmlwidget that runs in interactive Shiny apps
+and in static HTML documents.
+
+- **Fast on large data, no sampling.** The data is sent to the browser
+  as Parquet and queried in place with DuckDB-WASM, so filtering,
+  sorting, and scrolling stay responsive on datasets that overwhelm
+  DOM-bound grids or server-paged tables.
+- **SAS Studio layout.** A column-selection panel with char/num type
+  icons and a collapse toggle, a property pane (Label, Name, Length,
+  Type, Format, Informat), a names-versus-labels header toggle, header
+  right-click sort, and a free-text “Filter Table Rows” expression.
+- **Clinical metadata.** With the sibling
+  [`artoo`](https://github.com/vthanik/artoo) package installed, column
+  labels, formats, informats, and storage lengths are read from a
+  labelled or CDISC-conformed frame. Plain data frames work with zero
+  `artoo` dependency.
+- **Runs offline / behind a firewall.** The grid, filters, code view,
+  and CSV export are bundled in the package. The DuckDB-WASM engine
+  loads from a CDN by default but is fetched into the package at install
+  time, so a Shiny app can serve it to browsers with no internet at
+  runtime.
+
+## Installation
+
+Install the released version from CRAN:
+
+``` r
+
+install.packages("datasetviewer")
+```
+
+Or the development version from GitHub:
+
+``` r
+
+# install.packages("pak")
+pak::pak("vthanik/datasetviewer")
+# or
+remotes::install_github("vthanik/datasetviewer")
+```
+
+## Usage
+
+``` r
+
+library(datasetviewer)
+
+# a plain data frame
+dataset_viewer(mtcars)
+
+# an artoo-conformed frame, headers shown as labels
+adsl <- artoo::read_dataset("adsl.parquet")
+dataset_viewer(adsl, view = "labels")
+```
+
+Right-click a column header to sort or add a filter; click the funnel in
+the toolbar to edit the filter expression directly (for example
+`AGE > 50 and SEX = "M"`).
+
+### In Shiny
+
+``` r
+
+library(shiny)
+ui <- fluidPage(datasetviewerOutput("viewer", height = "500px"))
+server <- function(input, output, session) {
+  output$viewer <- renderDatasetViewer(dataset_viewer(adsl))
+  # input$viewer_filter, input$viewer_sort, input$viewer_columns,
+  # input$viewer_view track the user's current view
+}
+shinyApp(ui, server)
+```
+
+## Offline and corporate use
+
+Everything except the DuckDB-WASM query engine (~35 MB, too large to
+ship in a package) is bundled and works offline. The engine loads from a
+CDN by default, but — like the
+[`arrow`](https://arrow.apache.org/docs/r/) package’s C++ library — it
+is fetched into the package **at install time**, so a Shiny app can
+serve it to browsers with no internet at runtime. Steer the install-time
+fetch for air-gapped or mirrored environments:
+
+| Variable | Effect |
+|----|----|
+| `DATASETVIEWER_DUCKDB_DIR` | Copy the engine from a pre-staged directory (fully air-gapped install). |
+| `DATASETVIEWER_DUCKDB_URL` / `DATASETVIEWER_DUCKDB_EXT_URL` | Internal mirror base URLs for the engine and the DuckDB extension repository. |
+| `DATASETVIEWER_DUCKDB_OFFLINE` | Set to `true` to skip the fetch and always use the CDN. |
+
+The install never fails if the engine cannot be fetched; the widget
+falls back to the CDN at runtime. For self-contained HTML documents, set
+`options(datasetviewer.use_local_engine = FALSE)` to load the engine
+from the CDN instead of embedding it. See
+[`vignette("datasetviewer")`](https://vthanik.github.io/datasetviewer/articles/datasetviewer.md)
+for details.
