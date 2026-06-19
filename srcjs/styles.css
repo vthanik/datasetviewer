@@ -286,6 +286,37 @@
   flex: 0 0 auto;
 }
 
+.dv-cols-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 8px 8px 12px;
+  flex: 0 0 auto;
+}
+
+.dv-cols-sort,
+.dv-cols-filter {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--dv-sans);
+  font-size: 12px;
+  padding: 4px 7px;
+  border: 1px solid var(--dv-rule);
+  border-radius: var(--dv-radius);
+  background: var(--dv-canvas);
+  color: var(--dv-ink);
+}
+
+.dv-cols-filter::placeholder {
+  color: var(--dv-ink-3);
+}
+
+.dv-cols-filter:focus,
+.dv-cols-sort:focus {
+  outline: none;
+  border-color: var(--dv-signal);
+}
+
 .dv-cols-list {
   overflow: auto;
   flex: 1 1 auto;

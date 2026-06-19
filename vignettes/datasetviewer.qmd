@@ -52,7 +52,10 @@ at home:
 
 - **Columns panel** (left) — a checklist of every column with a type chip
   (`A` for character, `#` for numeric, a calendar for dates). Uncheck a column
-  to hide it from the grid; the data is never reloaded.
+  to hide it from the grid; the data is never reloaded. Sort the list by
+  original order, name, or type, and filter it by name to find columns in a wide
+  dataset (the list order is a navigation aid; the grid column order is
+  unchanged).
 - **Property pane** (lower left) — select a column to inspect its `Label`,
   `Name`, `Length`, `Type`, and `Format`, the same attributes `PROC CONTENTS`
   reports.

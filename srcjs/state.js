@@ -48,3 +48,29 @@ export function headerText(column, view) {
   if (view === "labels") return column.label || column.name;
   return column.name;
 }
+
+// Type-sort rank: characters, then numbers, then temporal. Sorting on the raw
+// `kind` string alphabetically would wedge "number" between "datetime" and
+// "string"; this rank keeps an intuitive grouping.
+const KIND_RANK = { string: 0, number: 1, date: 2, datetime: 3, time: 4 };
+
+// Display order of columns for the columns-panel "Sort by" dropdown. Returns an
+// array of indices into `columns` (so the panel can reorder its rows without
+// touching the column data). `mode` is one of: "original", "name-asc",
+// "name-desc", "type-asc", "type-desc". Name comparisons use the text actually
+// shown under `view` (name or label); type comparisons fall back to that name as
+// the tiebreaker. Pure -- no DOM.
+export function columnSortOrder(columns, mode, view) {
+  const order = columns.map((_, i) => i);
+  if (!mode || mode === "original") return order;
+  const label = (i) => headerText(columns[i], view);
+  const byName = (a, b) => label(a).localeCompare(label(b));
+  const rank = (i) => KIND_RANK[columns[i].kind] ?? 99;
+  const cmp = {
+    "name-asc": byName,
+    "name-desc": (a, b) => byName(b, a),
+    "type-asc": (a, b) => rank(a) - rank(b) || byName(a, b),
+    "type-desc": (a, b) => rank(b) - rank(a) || byName(a, b),
+  }[mode];
+  return cmp ? order.sort(cmp) : order;
+}

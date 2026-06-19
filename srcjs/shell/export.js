@@ -4,6 +4,7 @@
 // memory at once -- the export scales with the data the widget targets.
 
 import { whereFromExpr, orderFromSort } from "../sql.js";
+import { headerText } from "../state.js";
 
 const CHUNK = 50000;
 
@@ -18,7 +19,11 @@ export function exportCsv({ engine, store, rowCount }) {
   const where = whereFromExpr(state.filterExpr);
   const order = orderFromSort(state.sort);
 
-  const parts = [selected.map((c) => csvCell(c.name)).join(",") + "\n"];
+  // Header row follows the View toggle: column names, or labels in labels view
+  // (falling back to the name when a label is absent).
+  const parts = [
+    selected.map((c) => csvCell(headerText(c, state.view))).join(",") + "\n",
+  ];
 
   function fetchChunk(offset) {
     return engine

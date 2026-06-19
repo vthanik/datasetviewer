@@ -7,7 +7,9 @@
   queried in place with DuckDB-WASM, so filter, sort, and scroll stay fast on
   large datasets without sampling rows.
 * The shell provides a column-selection panel with char/num type icons and a
-  collapse chevron, a property pane (Label, Name, Length, Type, Format), a
+  collapse chevron (its list can be sorted by original order, name, or type and
+  filtered by name to navigate wide datasets, without changing the grid column
+  order), a property pane (Label, Name, Length, Type, Format), a
   names-versus-labels header toggle, and click-a-header to sort (ascending,
   descending, off) -- Shift-click adds columns for a multi-column sort, each
   shown with its direction and priority. A right-click menu sorts per column
