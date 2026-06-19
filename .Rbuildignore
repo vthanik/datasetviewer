@@ -28,3 +28,6 @@
 ^vignettes/.*_files$
 ^LICENSE\.md$
 ^\.gitignore$
+^cran-comments\.md$
+^datasetviewer.*\.tar\.gz$
+^.*\.Rcheck$

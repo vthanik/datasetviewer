@@ -91,8 +91,35 @@ over the lazy shortcut. No silent truncation, no "good enough for now."
 
 - `srcjs/` -> esbuild -> committed `inst/htmlwidgets/datasetviewer.js`
   (package installs without Node). Rebuild: `Rscript tools/build.R` (needs a
-  one-time `npm install`). DuckDB-WASM + worker ship in
-  `inst/htmlwidgets/duckdb/`.
+  one-time `npm install`). The DuckDB-WASM engine is NOT committed or shipped
+  in the tarball; it is fetched at install time (see decision below).
+
+## DuckDB-WASM engine: install-time fetch (CRAN decision, 2026-06-19)
+
+**Decision: acquire the ~80 MB DuckDB-WASM engine at install time, arrow-style
+— never ship it in the source tarball.** CRAN's tarball limit is ~5 MB; the
+engine + parquet extension are ~80 MB, so bundling them is an automatic
+reject. Modelled on `arrow`'s `tools/nixlibs.R` / `LIBARROW_BINARY`.
+
+- `configure` (POSIX `sh`) runs `tools/fetch-duckdb.R` at `R CMD INSTALL`,
+  ending `|| true; exit 0` — the fetch is best-effort and NEVER fails the
+  install (CRAN rejects packages that error at install with no network).
+- `tools/fetch-duckdb.R` downloads the engine (eh+mvp wasm + workers) and the
+  parquet extension into `inst/htmlwidgets/duckdb/`, wrapped in `tryCatch`
+  (catches errors AND warnings), removes any partial bundle, and is
+  idempotent. Air-gap/corporate controls mirror arrow:
+  `DATASETVIEWER_DUCKDB_{OFFLINE,DIR,URL,EXT_URL}`.
+- `inst/htmlwidgets/duckdb/` is git-ignored AND `.Rbuildignore`d, so neither
+  the repo nor the tarball carries it. Built tarball is ~287 KB.
+- Runtime fallback: when the local bundle is absent (offline install, CRAN
+  sandbox, static self-contained HTML via
+  `options(datasetviewer.use_local_engine = FALSE)`), the widget loads the
+  engine from the jsDelivr CDN. Wiring in `R/duckdb.R` (`.dv_duckdb_local`,
+  `.dv_duckdb_dependency`).
+
+Consequence: **package size is NOT a CRAN blocker.** Do not re-flag the local
+working-tree `inst/htmlwidgets/duckdb/` size as a problem — measure the built
+tarball (`R CMD build`), not the working tree.
 
 ## Dev loop (all, in order; 0/0/0 before commit)
 

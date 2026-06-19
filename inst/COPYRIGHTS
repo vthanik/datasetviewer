@@ -1,0 +1,22 @@
+datasetviewer bundles third-party JavaScript, compiled from srcjs/ into
+inst/htmlwidgets/datasetviewer.js by esbuild (see tools/build.R). The DuckDB
+runtime engine is not committed or shipped in the package tarball; it is the
+JavaScript API of @duckdb/duckdb-wasm that is bundled, while the WebAssembly
+binaries are fetched at install time or loaded from a CDN at runtime (see
+R/duckdb.R and tools/fetch-duckdb.R).
+
+Bundled components and their licenses:
+
+  Component                  Version            License       Copyright holder
+  -------------------------  -----------------  ------------  -----------------------
+  react                      18.3.1             MIT           Meta Platforms, Inc.
+  react-dom                  18.3.1             MIT           Meta Platforms, Inc.
+  @glideapps/glide-data-grid 6.0.3              MIT           Glide Technologies, Inc.
+  apache-arrow               21.1.0             Apache-2.0    The Apache Software Foundation
+  @duckdb/duckdb-wasm        1.33.1-dev45.0     MIT           DuckDB Labs / Stichting DuckDB Foundation
+
+The MIT-licensed components are distributed under the same terms as this
+package (MIT, see LICENSE). apache-arrow is distributed under the Apache
+License, Version 2.0; see https://www.apache.org/licenses/LICENSE-2.0 for the
+full text. Each component's full license and copyright notice is retained in
+its source distribution under node_modules/<component>/ (not shipped).
