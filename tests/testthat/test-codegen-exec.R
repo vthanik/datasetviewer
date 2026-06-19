@@ -12,7 +12,7 @@ run_code <- function(code, data) {
   eval(parse(text = code), envir = env)
 }
 
-test_that("a character %in% filter with select-first runs and returns the view", {
+test_that("a character %in% filter with select() last runs and returns the view", {
   d <- data.frame(
     SITEID = c("701", "702", "703", "701"),
     ARM = c("Placebo", "Low", "High", "Placebo"),
@@ -23,15 +23,38 @@ test_that("a character %in% filter with select-first runs and returns the view",
     "library(dplyr)",
     "",
     "data |>",
-    "  select(SITEID, ARM) |>",
     '  filter(SITEID %in% c("701", "703")) |>',
-    "  arrange(desc(SITEID))",
+    "  arrange(desc(SITEID)) |>",
+    "  select(SITEID, ARM)",
     sep = "\n"
   )
   res <- run_code(code, d)
   expect_named(res, c("SITEID", "ARM"))
   expect_true(all(res$SITEID %in% c("701", "703")))
   expect_equal(res$SITEID, sort(res$SITEID, decreasing = TRUE))
+})
+
+test_that("a filter on a hidden (unselected) column runs because select() is last", {
+  d <- data.frame(
+    SITEID = c("701", "702", "703"),
+    ARM = c("Placebo", "Low", "High"),
+    AGE = c(75, 64, 80),
+    stringsAsFactors = FALSE
+  )
+  # AGE drives the filter but is not in select(). Emitting select() first would
+  # drop AGE and the code would error with object 'AGE' not found.
+  code <- paste(
+    "library(dplyr)",
+    "",
+    "data |>",
+    "  filter(AGE >= 75) |>",
+    "  select(SITEID, ARM)",
+    sep = "\n"
+  )
+  res <- run_code(code, d)
+  expect_named(res, c("SITEID", "ARM"))
+  expect_equal(nrow(res), 2L)
+  expect_false("AGE" %in% names(res))
 })
 
 test_that("a NOT IN filter runs (precedence: !x %in% c() == !(x %in% c()))", {

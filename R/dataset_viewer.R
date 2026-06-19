@@ -18,7 +18,7 @@
 #' @param x *Dataset to view.* `<data.frame | character(1)>`. A data frame, or
 #'   a file path read via [artoo::read_dataset()] (xpt, Dataset-JSON, NDJSON,
 #'   Parquet, RDS). An artoo-conformed frame supplies labels, formats, and
-#'   informats to the property panel; a plain frame uses synthesized metadata.
+#'   lengths to the property panel; a plain frame uses synthesized metadata.
 #' @param ... Reserved for future arguments.
 #' @param view *Initial header mode.* `<character(1)>`. `"names"` (default,
 #'   matching SAS Studio) shows column names as headers; `"labels"` shows

@@ -17,7 +17,7 @@ dataset_viewer(
 \item{x}{\emph{Dataset to view.} \verb{<data.frame | character(1)>}. A data frame, or
 a file path read via \code{\link[artoo:read_dataset]{artoo::read_dataset()}} (xpt, Dataset-JSON, NDJSON,
 Parquet, RDS). An artoo-conformed frame supplies labels, formats, and
-informats to the property panel; a plain frame uses synthesized metadata.}
+lengths to the property panel; a plain frame uses synthesized metadata.}
 
 \item{...}{Reserved for future arguments.}
 

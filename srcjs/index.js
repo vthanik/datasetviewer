@@ -5,10 +5,12 @@
 /* global HTMLWidgets */
 
 import "./styles.css";
-import { createStore, initialState } from "./state.js";
+import { createStore, initialState, headerText } from "./state.js";
 import { createEngine } from "./engine/engine.js";
 import { b64ToBytes } from "./parquet_decode.js";
 import { whereFromExpr, orderFromSort } from "./sql.js";
+import { replaceColumnClause } from "./filter_expr.js";
+import { cycleSort } from "./sort.js";
 import { validateFilterTypes } from "./filter_validate.js";
 import { createGrid } from "./shell/grid_view.js";
 import { createToolbar } from "./shell/toolbar.js";
@@ -160,12 +162,15 @@ HTMLWidgets.widget({
           onClear: () => store.set({ filterExpr: "" }),
         });
 
-        // Append a per-column clause to the active filter, AND-combined.
-        function appendFilter(clause) {
+        // Apply a per-column clause to the active filter. Re-applying a column
+        // REPLACES its existing clause (so the dialog never produces a
+        // contradictory `col in (...) and col = ...`); clauses for other
+        // columns are kept and AND-combined.
+        function applyColumnFilter(colName, clause) {
           const cur = (store.get().filterExpr || "").trim();
           // Parenthesize only a compound clause (the builders join with " and ").
           const c = clause.includes(" and ") ? `(${clause})` : clause;
-          const next = cur ? `${cur} and ${c}` : c;
+          const next = replaceColumnClause(cur, colName, c);
           try {
             validateFilterTypes(next, kindMap());
           } catch (e) {
@@ -178,7 +183,7 @@ HTMLWidgets.widget({
 
         const addFilterDialog = createAddFilterDialog(el, {
           getDistinct: (name) => engine.distinct(name),
-          onApply: appendFilter,
+          onApply: applyColumnFilter,
         });
 
         // SAS-style "Show code": a snapshot of the dplyr pipeline for the
@@ -212,14 +217,20 @@ HTMLWidgets.widget({
         function copyColumn(colMeta) {
           if (!engine) return;
           const state = store.get();
+          const header = headerText(colMeta, state.view);
           const where = whereFromExpr(state.filterExpr);
           const order = orderFromSort(state.sort);
           engine
             .column(colMeta.name, { where, order })
             .then((vals) => {
-              copyText(vals.map((v) => (v == null ? "" : String(v))).join("\n"));
+              const body = vals.map((v) => (v == null ? "" : String(v))).join("\n");
+              copyText(header + "\n" + body);
             })
             .catch(() => {});
+        }
+
+        function copyHeader(colMeta) {
+          copyText(headerText(colMeta, store.get().view));
         }
 
         function cellMenu({ value, rowVals, isMarker }, bounds) {
@@ -248,6 +259,10 @@ HTMLWidgets.widget({
               label: "Copy Column",
               shortcut: "⌘C",
               onClick: () => copyColumn(colMeta),
+            },
+            {
+              label: "Copy Header",
+              onClick: () => copyHeader(colMeta),
             },
             { separator: true },
             {
@@ -302,6 +317,8 @@ HTMLWidgets.widget({
               scrollApi,
               gridApi,
               onHeaderMenu: headerMenu,
+              onSort: (name) =>
+                store.set({ sort: cycleSort(store.get().sort, name) }),
               onCellMenu: cellMenu,
               onCount: (n) => {
                 currentRowCount = n;

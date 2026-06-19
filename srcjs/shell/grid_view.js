@@ -75,6 +75,7 @@ function Grid({
   scrollApi,
   gridApi,
   onHeaderMenu,
+  onSort,
   onCellMenu,
   onCount,
 }) {
@@ -182,15 +183,20 @@ function Grid({
     return undefined;
   });
 
-  const gridColumns = useMemo(
-    () =>
-      visible.map((c) => ({
-        title: headerText(c, snap.view),
+  const gridColumns = useMemo(() => {
+    const active = (snap.sort || [])[0];
+    return visible.map((c) => {
+      // A sort caret in the title only -- never in headerText, so "Copy Header"
+      // and the property panel stay clean.
+      const caret =
+        active && active.name === c.name ? (active.dir === "desc" ? " ▼" : " ▲") : "";
+      return {
+        title: headerText(c, snap.view) + caret,
         id: c.name,
         width: colWidths[c.name] || COL_WIDTH,
-      })),
-    [visible, snap.view, colWidths]
-  );
+      };
+    });
+  }, [visible, snap.view, snap.sort, colWidths]);
 
   const onColumnResize = useCallback((column, newSize) => {
     setColWidths((w) => ({ ...w, [column.id]: newSize }));
@@ -248,6 +254,13 @@ function Grid({
     [visible, onHeaderMenu]
   );
 
+  const onHeaderClicked = useCallback(
+    (colIndex) => {
+      if (onSort) onSort(visible[colIndex].name);
+    },
+    [visible, onSort]
+  );
+
   const onCellContextMenu = useCallback(
     (cell, event) => {
       if (event.preventDefault) event.preventDefault();
@@ -290,6 +303,7 @@ function Grid({
           rows: rowCount,
           getCellContent,
           onVisibleRegionChanged,
+          onHeaderClicked,
           onHeaderContextMenu,
           onCellContextMenu,
           onColumnResize,

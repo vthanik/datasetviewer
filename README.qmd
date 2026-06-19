@@ -38,12 +38,12 @@ static HTML documents.
   scrolling stay responsive on datasets that overwhelm DOM-bound grids or
   server-paged tables.
 - **SAS Studio layout.** A column-selection panel with char/num type icons
-  and a collapse toggle, a property pane (Label, Name, Length, Type, Format,
-  Informat), a names-versus-labels header toggle, header right-click sort,
-  and a free-text "Filter Table Rows" expression.
+  and a collapse toggle, a property pane (Label, Name, Length, Type, Format),
+  a names-versus-labels header toggle, click-a-header to sort, and a free-text
+  "Filter Table Rows" expression.
 - **Clinical metadata.** With the sibling
   [`artoo`](https://github.com/vthanik/artoo) package installed, column
-  labels, formats, informats, and storage lengths are read from a labelled or
+  labels, formats, and storage lengths are read from a labelled or
   CDISC-conformed frame. Plain data frames work with zero `artoo` dependency.
 - **Runs offline / behind a firewall.** The grid, filters, code view, and
   CSV export are bundled in the package. The DuckDB-WASM engine loads from a
@@ -80,8 +80,9 @@ adsl <- artoo::read_dataset("adsl.parquet")
 dataset_viewer(adsl, view = "labels")
 ```
 
-Right-click a column header to sort or add a filter; click the funnel in the
-toolbar to edit the filter expression directly (for example
+Click a column header to sort it (again for descending, once more to clear);
+right-click for the header menu to add a filter or copy the column. Click the
+funnel in the toolbar to edit the filter expression directly (for example
 `AGE > 50 and SEX = "M"`).
 
 ### In Shiny
