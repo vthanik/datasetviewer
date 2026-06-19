@@ -8,7 +8,11 @@ on:
 
 name: test-coverage.yaml
 
-permissions: read-all
+# id-token: write lets codecov-action authenticate the upload via GitHub OIDC
+# (no CODECOV_TOKEN needed); contents: read covers the checkout.
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   test-coverage:
@@ -41,14 +45,16 @@ jobs:
 
       - uses: codecov/codecov-action@v5
         with:
-          # Upload is best-effort. Codecov rejects tokenless uploads, so a
-          # missing CODECOV_TOKEN must not fail the job; with the token set
-          # the upload succeeds, without it the upload is skipped silently.
+          # Authenticate the upload with GitHub OIDC instead of a token. A
+          # plain tokenless upload is rejected for a repo Codecov has not
+          # activated ("not valid tokenless upload"); an OIDC-signed upload is
+          # treated as authenticated and onboards the repo, so no
+          # CODECOV_TOKEN secret is needed. Requires id-token: write above.
+          use_oidc: true
           fail_ci_if_error: false
           files: ./cobertura.xml
           plugins: noop
           disable_search: true
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Show testthat output
         if: always()
