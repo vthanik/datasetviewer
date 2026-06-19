@@ -39,8 +39,8 @@ static HTML documents.
   server-paged tables.
 - **SAS Studio layout.** A column-selection panel with char/num type icons
   and a collapse toggle, a property pane (Label, Name, Length, Type, Format),
-  a names-versus-labels header toggle, click-a-header to sort, and a free-text
-  "Filter Table Rows" expression.
+  a names-versus-labels header toggle, click-a-header to sort (Shift-click for
+  multi-column sort), and a free-text "Filter Table Rows" expression.
 - **Clinical metadata.** With the sibling
   [`artoo`](https://github.com/vthanik/artoo) package installed, column
   labels, formats, and storage lengths are read from a labelled or
@@ -81,7 +81,9 @@ dataset_viewer(adsl, view = "labels")
 ```
 
 Click a column header to sort it (again for descending, once more to clear);
-right-click for the header menu to add a filter or copy the column. Click the
+**Shift-click** additional headers to build a multi-column sort, each shown with
+its direction and priority (`AGE ↑1`, `SEX ↓2`). Right-click for the header menu
+to add a filter, copy the column or its header, or clear the sort. Click the
 funnel in the toolbar to edit the filter expression directly (for example
 `AGE > 50 and SEX = "M"`).
 

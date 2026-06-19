@@ -125,6 +125,21 @@ test("full pipeline: filter, then arrange, then select", () => {
   );
 });
 
+test("multi-column sort -> arrange() with both keys in priority order", () => {
+  const state = {
+    columns: cols(["region", "age", "id"]),
+    filterExpr: "",
+    sort: [
+      { name: "region", dir: "asc" },
+      { name: "age", dir: "desc" },
+    ],
+  };
+  assert.equal(
+    dplyrCode(state, "d"),
+    "library(dplyr)\n\nd |>\n  arrange(region, desc(age))"
+  );
+});
+
 test("all columns selected -> no select()", () => {
   const state = {
     columns: cols(["mpg", "cyl"]),

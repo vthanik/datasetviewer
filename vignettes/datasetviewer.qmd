@@ -61,9 +61,11 @@ at home:
   reveals the dplyr pipeline for the current view, and **Filter table rows**
   (the funnel) with a badge showing the active filter.
 - **Header sort** — click a column header to sort it ascending, again for
-  descending, and once more to return to the original order.
+  descending, and once more to return to the original order. Shift-click further
+  headers to build a multi-column sort; each sorted column shows its direction
+  and priority (`AGE ↑1`, `SEX ↓2`).
 - **Header menu** — right-click any column header to add a filter, copy the
-  column or its header, or size the columns to content.
+  column or its header, clear the sort, or size the columns to content.
 - **Status bar** — the total row and column counts, and the filtered count
   once a filter is active.
 

@@ -57,6 +57,21 @@ test_that("a filter on a hidden (unselected) column runs because select() is las
   expect_false("AGE" %in% names(res))
 })
 
+test_that("a multi-column arrange() orders by primary then secondary key", {
+  d <- data.frame(
+    REGION = c("South", "North", "South", "North"),
+    AGE = c(40L, 64L, 75L, 30L),
+    stringsAsFactors = FALSE
+  )
+  # arrange(REGION, desc(AGE)): North before South, AGE descending within each.
+  res <- run_code(
+    "library(dplyr)\n\ndata |>\n  arrange(REGION, desc(AGE))",
+    d
+  )
+  expect_equal(res$REGION, c("North", "North", "South", "South"))
+  expect_equal(res$AGE, c(64L, 30L, 75L, 40L))
+})
+
 test_that("a NOT IN filter runs (precedence: !x %in% c() == !(x %in% c()))", {
   d <- data.frame(SEX = c("M", "F", "M", "F"))
   res <- run_code('library(dplyr)\n\ndata |>\n  filter(!SEX %in% c("M"))', d)

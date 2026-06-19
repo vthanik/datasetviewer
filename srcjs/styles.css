@@ -45,6 +45,13 @@
   --dv-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
   --dv-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Corner radius scale -- Positron-light, uniform across every surface. On
+     :root (not .datasetviewer-root) so the body-appended context menu can read
+     it too. */
+  --dv-radius-sm: 3px;
+  --dv-radius: 4px;
+  --dv-radius-lg: 6px;
 }
 
 .datasetviewer-root {
@@ -87,7 +94,7 @@
 .datasetviewer-root *:focus-visible {
   outline: 2px solid var(--dv-signal);
   outline-offset: 1px;
-  border-radius: 3px;
+  border-radius: var(--dv-radius-sm);
 }
 
 .datasetviewer-root input[type="checkbox"] {
@@ -127,7 +134,7 @@
   font-size: 12px;
   padding: 3px 7px;
   border: 1px solid var(--dv-rule);
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   color: var(--dv-ink);
   min-width: 150px;
@@ -141,7 +148,7 @@
   height: 28px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: transparent;
   color: var(--dv-ink-2);
   cursor: pointer;
@@ -338,7 +345,7 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 4px;
+  border-radius: var(--dv-radius);
   font-family: var(--dv-mono);
   font-size: 11px;
   font-weight: 600;
@@ -420,7 +427,7 @@
   font-size: 12px;
   color: var(--dv-signal);
   border: 1px solid var(--dv-rule);
-  border-radius: 6px;
+  border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   cursor: pointer;
   padding: 4px 9px;
@@ -509,7 +516,7 @@
   font-size: 12px;
   background: var(--dv-paper);
   border: 1px solid var(--dv-rule);
-  border-radius: 3px;
+  border-radius: var(--dv-radius-sm);
   padding: 0 4px;
   color: var(--dv-signal);
 }
@@ -528,7 +535,7 @@
   display: inline-block;
   background: var(--dv-paper);
   border: 1px solid var(--dv-rule);
-  border-radius: 4px;
+  border-radius: var(--dv-radius);
   padding: 2px 8px;
   font-family: var(--dv-mono);
   font-size: 12px;
@@ -538,7 +545,7 @@
 .dv-modal {
   background: var(--dv-canvas);
   border: 1px solid var(--dv-rule);
-  border-radius: 10px;
+  border-radius: var(--dv-radius-lg);
   box-shadow: 0 16px 48px rgba(21, 33, 43, 0.22);
   width: 420px;
   max-width: 90%;
@@ -576,7 +583,7 @@
   font-family: var(--dv-sans);
   font-size: 12px;
   border: 1px solid var(--dv-rule);
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   color: var(--dv-ink);
   cursor: pointer;
@@ -594,7 +601,7 @@
   min-height: 90px;
   resize: vertical;
   border: 1px solid var(--dv-rule);
-  border-radius: 7px;
+  border-radius: var(--dv-radius);
   padding: 9px;
   color: var(--dv-ink);
   box-sizing: border-box;
@@ -621,7 +628,7 @@
 .dv-modal-cancel {
   font-family: var(--dv-sans);
   font-size: 13px;
-  border-radius: 6px;
+  border-radius: var(--dv-radius);
   padding: 6px 16px;
   cursor: pointer;
 }
@@ -661,7 +668,7 @@
   padding: 14px 16px;
   background: #f6f8fa;
   border: 1px solid var(--dv-rule);
-  border-radius: 7px;
+  border-radius: var(--dv-radius);
   color: var(--dv-ink);
   white-space: pre;
   overflow: auto;
@@ -700,7 +707,7 @@
 
 .dv-af-values {
   border: 1px solid var(--dv-rule);
-  border-radius: 7px;
+  border-radius: var(--dv-radius);
   max-height: 260px;
   overflow: auto;
 }
@@ -757,7 +764,7 @@
   font-size: 12px;
   padding: 4px 6px;
   border: 1px solid var(--dv-rule);
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   color: var(--dv-ink);
 }
@@ -769,7 +776,7 @@
   flex: 1 1 auto;
   padding: 5px 8px;
   border: 1px solid var(--dv-rule);
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   color: var(--dv-ink);
 }
 .dv-af-val:focus,
@@ -783,7 +790,7 @@
   width: 28px;
   height: 28px;
   border: 1px solid var(--dv-rule);
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   cursor: pointer;
   color: var(--dv-signal);
@@ -813,7 +820,7 @@
   display: flex;
   align-items: center;
   border: 1px solid var(--dv-rule);
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   overflow: hidden;
 }
@@ -850,7 +857,7 @@
   width: 264px;
   background: var(--dv-canvas);
   border: 1px solid var(--dv-rule);
-  border-radius: 10px;
+  border-radius: var(--dv-radius-lg);
   box-shadow: 0 12px 36px rgba(21, 33, 43, 0.18);
   padding: 11px;
   font-family: var(--dv-sans);
@@ -870,7 +877,7 @@
   width: 26px;
   height: 26px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: transparent;
   cursor: pointer;
   font-size: 18px;
@@ -886,7 +893,7 @@
   font: inherit;
   padding: 4px 6px;
   border: 1px solid var(--dv-rule);
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   color: var(--dv-ink);
   text-align: center;
@@ -911,7 +918,7 @@
   background: transparent;
   cursor: pointer;
   padding: 6px 0;
-  border-radius: 5px;
+  border-radius: var(--dv-radius);
   font-family: var(--dv-sans);
   font-size: 12px;
   color: var(--dv-ink);
@@ -974,7 +981,7 @@
   z-index: 99999;
   background: var(--dv-canvas);
   border: 1px solid var(--dv-rule);
-  border-radius: 8px;
+  border-radius: var(--dv-radius-lg);
   box-shadow: 0 10px 28px rgba(21, 33, 43, 0.16);
   padding: 4px 0;
   min-width: 184px;
@@ -989,21 +996,35 @@
 .dv-menu-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 7px 14px;
+  gap: 10px;
+  padding: 5px 12px;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.dv-menu-item:hover {
+.dv-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--dv-ink-3);
+}
+
+.dv-menu-item:hover:not(.dv-menu-item-disabled) {
   background: var(--dv-signal-weak);
   color: var(--dv-signal);
 }
 
-.dv-menu-shortcut {
+.dv-menu-item:hover:not(.dv-menu-item-disabled) .dv-menu-icon {
+  color: var(--dv-signal);
+}
+
+.dv-menu-item-disabled {
   color: var(--dv-ink-3);
-  font-size: 12px;
+  opacity: 0.5;
+  cursor: default;
 }
 
 .dv-menu-sep {

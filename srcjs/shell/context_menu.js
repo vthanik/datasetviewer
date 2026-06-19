@@ -15,19 +15,20 @@ export function showContextMenu(x, y, items) {
       return;
     }
     const row = div("dv-menu-item");
+    if (item.disabled) row.classList.add("dv-menu-item-disabled");
+    const icon = div("dv-menu-icon");
+    if (item.icon) icon.innerHTML = item.icon;
+    row.appendChild(icon);
     const label = document.createElement("span");
+    label.className = "dv-menu-label";
     label.textContent = item.label;
     row.appendChild(label);
-    if (item.shortcut) {
-      const sc = document.createElement("span");
-      sc.className = "dv-menu-shortcut";
-      sc.textContent = item.shortcut;
-      row.appendChild(sc);
+    if (!item.disabled) {
+      row.addEventListener("click", () => {
+        closeAny();
+        item.onClick();
+      });
     }
-    row.addEventListener("click", () => {
-      closeAny();
-      item.onClick();
-    });
     menu.appendChild(row);
   });
 

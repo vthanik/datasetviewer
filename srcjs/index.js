@@ -23,7 +23,7 @@ import { dplyrCode } from "./codegen.js";
 import { showContextMenu } from "./shell/context_menu.js";
 import { exportCsv } from "./shell/export.js";
 import { wireShiny } from "./shiny.js";
-import { ICONS } from "./shell/icons.js";
+import { ICONS, MENU_ICONS } from "./shell/icons.js";
 
 function div(className) {
   const e = document.createElement("div");
@@ -239,14 +239,14 @@ HTMLWidgets.widget({
             ? [
                 {
                   label: "Copy Row",
-                  shortcut: "⌘C",
+                  icon: MENU_ICONS.copy,
                   onClick: () => copyText((rowVals || []).join("\t")),
                 },
               ]
             : [
                 {
                   label: "Copy",
-                  shortcut: "⌘C",
+                  icon: MENU_ICONS.copy,
                   onClick: () => copyText(value),
                 },
               ];
@@ -254,37 +254,50 @@ HTMLWidgets.widget({
         }
 
         function headerMenu(colMeta, bounds) {
+          const sorted = (store.get().sort || []).length > 0;
           showContextMenu(bounds.x, bounds.y + bounds.height, [
             {
               label: "Copy Column",
-              shortcut: "⌘C",
+              icon: MENU_ICONS.copy,
               onClick: () => copyColumn(colMeta),
             },
             {
               label: "Copy Header",
+              icon: MENU_ICONS.copy,
               onClick: () => copyHeader(colMeta),
             },
             { separator: true },
             {
               label: "Sort Ascending",
+              icon: MENU_ICONS.sortAsc,
               onClick: () => store.set({ sort: [{ name: colMeta.name, dir: "asc" }] }),
             },
             {
               label: "Sort Descending",
+              icon: MENU_ICONS.sortDesc,
               onClick: () => store.set({ sort: [{ name: colMeta.name, dir: "desc" }] }),
+            },
+            {
+              label: "Clear Sorting",
+              icon: MENU_ICONS.clearSort,
+              disabled: !sorted,
+              onClick: () => store.set({ sort: [] }),
             },
             { separator: true },
             {
               label: "Add Filter",
+              icon: ICONS.filter,
               onClick: () => addFilterDialog.open(colMeta),
             },
             { separator: true },
             {
               label: "Size grid columns to content",
+              icon: MENU_ICONS.sizeToContent,
               onClick: () => gridApi.sizeToContent && gridApi.sizeToContent(),
             },
             {
               label: "Restore original column widths",
+              icon: MENU_ICONS.restoreWidths,
               onClick: () => gridApi.restoreWidths && gridApi.restoreWidths(),
             },
           ]);
@@ -317,8 +330,8 @@ HTMLWidgets.widget({
               scrollApi,
               gridApi,
               onHeaderMenu: headerMenu,
-              onSort: (name) =>
-                store.set({ sort: cycleSort(store.get().sort, name) }),
+              onSort: (name, additive) =>
+                store.set({ sort: cycleSort(store.get().sort, name, additive) }),
               onCellMenu: cellMenu,
               onCount: (n) => {
                 currentRowCount = n;

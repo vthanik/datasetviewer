@@ -184,12 +184,14 @@ function Grid({
   });
 
   const gridColumns = useMemo(() => {
-    const active = (snap.sort || [])[0];
+    const sort = snap.sort || [];
     return visible.map((c) => {
-      // A sort caret in the title only -- never in headerText, so "Copy Header"
-      // and the property panel stay clean.
+      // Per-column sort indicator (direction arrow + 1-based priority) in the
+      // title only -- never in headerText, so "Copy Header" and the property
+      // panel stay clean.
+      const p = sort.findIndex((s) => s.name === c.name);
       const caret =
-        active && active.name === c.name ? (active.dir === "desc" ? " ▼" : " ▲") : "";
+        p === -1 ? "" : ` ${sort[p].dir === "desc" ? "↓" : "↑"}${p + 1}`;
       return {
         title: headerText(c, snap.view) + caret,
         id: c.name,
@@ -255,8 +257,12 @@ function Grid({
   );
 
   const onHeaderClicked = useCallback(
-    (colIndex) => {
-      if (onSort) onSort(visible[colIndex].name);
+    (colIndex, event) => {
+      // Ignore the row-marker gutter; suppress Glide's own header selection so a
+      // Shift-click only extends the sort, not a column range highlight.
+      if (colIndex < 0 || !visible[colIndex]) return;
+      if (event && event.preventDefault) event.preventDefault();
+      if (onSort) onSort(visible[colIndex].name, !!(event && event.shiftKey));
     },
     [visible, onSort]
   );
