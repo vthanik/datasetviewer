@@ -1,21 +1,32 @@
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 1 note
+
+* The note is the expected "New submission" from
+  `checking CRAN incoming feasibility`; see below.
 
 ## Submission notes
 
-* This is a new submission (datasetviewer 0.1.0).
+* This is a new submission (datasetviewer 0.1.0), so
+  `checking CRAN incoming feasibility` reports a NOTE flagging it as a new
+  package with a new maintainer. This is expected for a first release.
 
 * The package renders an interactive htmlwidget. The DuckDB-WASM engine
   (~80 MB) is not shipped in the tarball. It is fetched at install time by a
   `configure` script (`tools/fetch-duckdb.R`), modelled on how the 'arrow'
   package acquires its C++ library. The fetch is best-effort and never fails
-  the install: when it cannot run (no network, or the CRAN build sandbox), the
-  widget loads the engine from a CDN at runtime instead, so the package
-  installs and works offline-of-the-engine without it. The behaviour can be
-  controlled with the environment variables `DATASETVIEWER_DUCKDB_OFFLINE`,
-  `DATASETVIEWER_DUCKDB_DIR`, `DATASETVIEWER_DUCKDB_URL`, and
-  `DATASETVIEWER_DUCKDB_EXT_URL`.
+  the install: it is wrapped so that no error or warning propagates, and when
+  it cannot run (no network, or the CRAN build sandbox) the install still
+  succeeds and the widget loads the engine from a CDN at runtime instead, so
+  the package installs and works without it. The download is therefore not
+  required for the package to install, load, check, or run its examples,
+  tests, and vignette (those do not exercise the engine). Should
+  `checking for ...` flag the `configure` step or an install-time download,
+  this is the reason. The behaviour can be steered with the environment
+  variables `DATASETVIEWER_DUCKDB_OFFLINE` (skip the fetch, always use the
+  CDN), `DATASETVIEWER_DUCKDB_DIR` (copy from a pre-staged directory for an
+  air-gapped install), `DATASETVIEWER_DUCKDB_URL`, and
+  `DATASETVIEWER_DUCKDB_EXT_URL` (internal mirrors).
 
 * The package bundles third-party JavaScript (React, Glide Data Grid,
   Apache Arrow JS, and the DuckDB-WASM JavaScript API) compiled into
