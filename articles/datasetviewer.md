@@ -117,10 +117,12 @@ filter, and the sort, in order:
 
 ``` r
 
+library(dplyr)
+
 mtcars |>
-  dplyr::select(cyl, hp, wt, mpg) |>
-  dplyr::filter(mpg >= 20) |>
-  dplyr::arrange(dplyr::desc(hp))
+  select(cyl, hp, wt, mpg) |>
+  filter(mpg >= 20) |>
+  arrange(desc(hp))
 ```
 
 The snippet is air-formatted and syntax-highlighted, with a **Copy**
