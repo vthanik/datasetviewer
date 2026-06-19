@@ -42,25 +42,18 @@ export function plainClickSort(sort, neutral, name) {
   return { sort: [], neutral: name };
 }
 
-export function cycleSort(sort, name, additive = false) {
+// Shift-click: add/cycle this column WITHIN the multi-sort, keeping the rest.
+// Absent -> appended ascending at the next priority; ascending -> descending in
+// place (priority preserved); descending -> removed. (Plain clicks go through
+// plainClickSort; this is the only multi-sort path.)
+export function shiftClickSort(sort, name) {
   const list = sort || [];
   const idx = list.findIndex((s) => s.name === name);
-
-  if (additive) {
-    // Shift-click: add/cycle this column within the multi-sort, keep the rest.
-    if (idx === -1) return [...list, { name, dir: "asc" }];
-    if (list[idx].dir === "asc") {
-      const next = list.slice();
-      next[idx] = { name, dir: "desc" }; // flip in place, priority preserved
-      return next;
-    }
-    return list.filter((_, i) => i !== idx); // desc -> remove
+  if (idx === -1) return [...list, { name, dir: "asc" }];
+  if (list[idx].dir === "asc") {
+    const next = list.slice();
+    next[idx] = { name, dir: "desc" };
+    return next;
   }
-
-  // Plain click: this column becomes the sole sort. Cycle only when it is
-  // already the sole key; otherwise start fresh ascending (dropping others).
-  const sole = list.length === 1 && idx === 0;
-  if (sole && list[0].dir === "asc") return [{ name, dir: "desc" }];
-  if (sole && list[0].dir === "desc") return [];
-  return [{ name, dir: "asc" }];
+  return list.filter((_, i) => i !== idx);
 }

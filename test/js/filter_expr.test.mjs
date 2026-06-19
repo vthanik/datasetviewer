@@ -90,6 +90,29 @@ test("replaceColumnClause treats a parenthesised compound as one column clause",
   );
 });
 
+test("replaceColumnClause parenthesises a retained OR sibling (precedence)", () => {
+  // AND binds tighter than OR; the kept SEX OR-clause must be wrapped so the
+  // new AGE clause applies to the whole OR group, not just one branch.
+  assert.equal(
+    replaceColumnClause('SEX = "M" or SEX = "F"', "AGE", "AGE >= 70"),
+    '(SEX = "M" or SEX = "F") and AGE >= 70'
+  );
+});
+
+test("replaceColumnClause does not double-wrap an already-parenthesised OR", () => {
+  assert.equal(
+    replaceColumnClause('(SEX = "M" or SEX = "F")', "AGE", "AGE >= 70"),
+    '(SEX = "M" or SEX = "F") and AGE >= 70'
+  );
+});
+
+test("replaceColumnClause ignores 'or' inside a quoted value", () => {
+  assert.equal(
+    replaceColumnClause('RACE in ("A OR B")', "AGE", "AGE >= 70"),
+    'RACE in ("A OR B") and AGE >= 70'
+  );
+});
+
 test("replaceColumnClause is case-insensitive on the column name", () => {
   assert.equal(
     replaceColumnClause('SEX = "M"', "sex", 'SEX = "F"'),

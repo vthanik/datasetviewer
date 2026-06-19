@@ -101,6 +101,10 @@ function Grid({
     columns: CompactSelection.empty(),
     rows: CompactSelection.empty(),
   });
+  // The header-highlighted column is tracked by NAME, not by a positional
+  // index: hiding/showing columns reindexes `visible`, so an index would point
+  // at the wrong column. The Glide column selection is derived from this name.
+  const [hlName, setHlName] = useState(null);
 
   useEffect(() => store.subscribe(setSnap), [store]);
 
@@ -136,25 +140,30 @@ function Grid({
     [engine]
   );
 
-  // Filter/sort change: invalidate cache, recount, jump to the top ROW, refetch.
-  // Vertical only -- keep the horizontal scroll so sorting a far-right column
-  // does not yank the view back to the first column.
+  // Row count depends only on the filter (WHERE); sorting cannot change it, so
+  // this is keyed on `where` alone -- a sort no longer triggers a full re-count.
   useEffect(() => {
     let cancelled = false;
-    cache.current.clear();
     engine
       .count(where)
       .then((n) => {
         if (cancelled) return;
         setRowCount(n);
         if (onCount) onCount(n);
-        ref.current?.scrollTo(0, 0, "vertical");
-        fetchWindow(0, FIRST_PAGE);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
+  }, [where, engine]);
+
+  // Filter OR sort change: invalidate the cache, jump to the top ROW (vertical
+  // only -- keep the horizontal scroll so sorting a far-right column does not
+  // yank the view back to the first column), and refetch the first page.
+  useEffect(() => {
+    cache.current.clear();
+    ref.current?.scrollTo(0, 0, "vertical");
+    fetchWindow(0, FIRST_PAGE);
   }, [where, order, engine, fetchWindow]);
 
   useEffect(() => {
@@ -256,11 +265,9 @@ function Grid({
   const onHeaderContextMenu = useCallback(
     (colIndex, event) => {
       if (event.preventDefault) event.preventDefault();
-      // Highlight the whole column.
-      setSelection({
-        columns: CompactSelection.fromSingleSelection(colIndex),
-        rows: CompactSelection.empty(),
-      });
+      // Highlight the whole column (by name; see hlName).
+      setHlName(visible[colIndex].name);
+      setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
       if (onHeaderMenu) onHeaderMenu(visible[colIndex], event.bounds);
     },
     [visible, onHeaderMenu]
@@ -274,10 +281,8 @@ function Grid({
       // reads as selected (highlighted) even before any sort arrow appears.
       if (colIndex < 0 || !visible[colIndex]) return;
       if (event && event.preventDefault) event.preventDefault();
-      setSelection({
-        columns: CompactSelection.fromSingleSelection(colIndex),
-        rows: CompactSelection.empty(),
-      });
+      setHlName(visible[colIndex].name);
+      setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
       if (onSort) onSort(visible[colIndex].name, !!(event && event.shiftKey));
     },
     [visible, onSort]
@@ -290,6 +295,7 @@ function Grid({
       const cached = cache.current.get(row);
       if (col < 0) {
         // Row number (marker): highlight the whole row, offer Copy Row.
+        setHlName(null);
         setSelection({
           rows: CompactSelection.fromSingleSelection(row),
           columns: CompactSelection.empty(),
@@ -316,6 +322,14 @@ function Grid({
   const contentHeight = HEADER_H + rowCount * ROW_H + (hOverflow ? HSCROLL_PAD : 0);
   const gridHeight = Math.min(size.height, contentHeight);
 
+  // Derive the column highlight from the tracked name so it follows the column
+  // across hide/show; fall back to Glide's own column selection when none.
+  const hlIdx = hlName ? visible.findIndex((c) => c.name === hlName) : -1;
+  const gridSelection =
+    hlIdx >= 0
+      ? { ...selection, columns: CompactSelection.fromSingleSelection(hlIdx) }
+      : selection;
+
   const editor =
     size.width > 0 && size.height > 0
       ? React.createElement(DataEditor, {
@@ -332,8 +346,12 @@ function Grid({
           rowMarkers: "clickable-number", // row numbers; click one to select the row
           rowHeight: ROW_H,
           headerHeight: HEADER_H,
-          gridSelection: selection,
-          onGridSelectionChange: setSelection,
+          gridSelection,
+          onGridSelectionChange: (sel) => {
+            // A body interaction (cell/row) drops the header highlight.
+            setHlName(null);
+            setSelection(sel);
+          },
           rowSelect: "single", // one row at a time, no multi-select
           rowSelectionMode: "single",
           smoothScrollX: true,

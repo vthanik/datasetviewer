@@ -34,18 +34,22 @@ export function showContextMenu(x, y, items) {
 
   document.body.appendChild(menu);
 
-  // Dismiss on the next click anywhere else.
-  setTimeout(() => {
-    const onDoc = (e) => {
-      if (!menu.contains(e.target)) closeAny();
-    };
-    menu._onDoc = onDoc;
-    document.addEventListener("mousedown", onDoc, { once: true });
-  }, 0);
+  // Dismiss on a mousedown OUTSIDE the menu. Not `{ once: true }`: a mousedown
+  // inside the menu (e.g. on a disabled item, a separator, or padding) must not
+  // consume the listener, or the menu would be left with no way to dismiss and
+  // stay stuck open. closeAny() removes the listener when the menu closes.
+  const onDoc = (e) => {
+    if (!menu.contains(e.target)) closeAny();
+  };
+  menu._onDoc = onDoc;
+  setTimeout(() => document.addEventListener("mousedown", onDoc), 0);
 }
 
 function closeAny() {
-  document.querySelectorAll(".dv-context-menu").forEach((m) => m.remove());
+  document.querySelectorAll(".dv-context-menu").forEach((m) => {
+    if (m._onDoc) document.removeEventListener("mousedown", m._onDoc);
+    m.remove();
+  });
 }
 
 function div(className) {

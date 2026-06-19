@@ -30,7 +30,6 @@ export function initialState(payload) {
     kind: c.kind || (c.type === "Num" ? "number" : "string"),
     length: c.length,
     format: c.format || "",
-    informat: c.informat || "",
     origIndex: i,
     selected: true,
   }));
@@ -49,10 +48,11 @@ export function headerText(column, view) {
   return column.name;
 }
 
-// Type-sort rank: characters, then numbers, then temporal. Sorting on the raw
-// `kind` string alphabetically would wedge "number" between "datetime" and
-// "string"; this rank keeps an intuitive grouping.
-const KIND_RANK = { string: 0, number: 1, date: 2, datetime: 3, time: 4 };
+// Type-sort rank: characters, then numbers/booleans, then temporal. Sorting on
+// the raw `kind` string alphabetically would wedge "number" between "datetime"
+// and "string"; this rank keeps an intuitive grouping and covers the engine's
+// full kind set (string | number | bool | date | datetime | time).
+const KIND_RANK = { string: 0, number: 1, bool: 2, date: 3, datetime: 4, time: 5 };
 
 // Display order of columns for the columns-panel "Sort by" dropdown. Returns an
 // array of indices into `columns` (so the panel can reorder its rows without
@@ -64,7 +64,10 @@ export function columnSortOrder(columns, mode, view) {
   const order = columns.map((_, i) => i);
   if (!mode || mode === "original") return order;
   const label = (i) => headerText(columns[i], view);
-  const byName = (a, b) => label(a).localeCompare(label(b));
+  // Fixed locale + options so the order is deterministic across browsers and
+  // sorts numbers naturally (COL2 before COL10), not by code point.
+  const byName = (a, b) =>
+    label(a).localeCompare(label(b), "en", { numeric: true, sensitivity: "base" });
   const rank = (i) => KIND_RANK[columns[i].kind] ?? 99;
   const cmp = {
     "name-asc": byName,

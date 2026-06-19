@@ -60,8 +60,13 @@ export function createAddFilterDialog(host, { getDistinct, onApply }) {
         .querySelectorAll('input[type="checkbox"]')
         .forEach((c) => (c.checked = false));
       modal
-        .querySelectorAll(".dv-af-val, .dv-af-critinput, .dv-date-input")
+        .querySelectorAll(".dv-af-val, .dv-af-critinput")
         .forEach((i) => (i.value = ""));
+      // Custom date fields hold their value in a closure, not the input, so
+      // reset them through the hook the field registers on its wrapper.
+      modal
+        .querySelectorAll(".dv-date-field")
+        .forEach((w) => w._clear && w._clear());
       err.textContent = "";
     });
     const cancel = el("button", "dv-modal-cancel");

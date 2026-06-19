@@ -11,7 +11,7 @@ import { b64ToBytes } from "./parquet_decode.js";
 import { whereFromExpr, orderFromSort } from "./sql.js";
 import { replaceColumnClause } from "./filter_expr.js";
 import {
-  cycleSort,
+  shiftClickSort,
   setColumnSort,
   removeColumnSort,
   plainClickSort,
@@ -66,6 +66,24 @@ HTMLWidgets.widget({
         el.innerHTML = "";
 
         const store = createStore(initialState(x));
+
+        // Commit a sort that does NOT come from a plain click (Shift-click or
+        // the right-click menu); these clear the plain-click neutral step.
+        const setSort = (next) => {
+          neutralCol = null;
+          store.set({ sort: next });
+        };
+
+        // The plain-click "neutral" step is only meaningful in the context it
+        // was entered: a filter or view change invalidates it, so reset it then
+        // (a later plain click on that column should start the cycle fresh).
+        let prevFilter = store.get().filterExpr;
+        let prevView = store.get().view;
+        store.subscribe((s) => {
+          if (s.filterExpr !== prevFilter || s.view !== prevView) neutralCol = null;
+          prevFilter = s.filterExpr;
+          prevView = s.view;
+        });
 
         // Column name -> kind, for strict type validation of filter values.
         const kindMap = () => {
@@ -283,27 +301,18 @@ HTMLWidgets.widget({
             {
               label: "Sort Ascending",
               icon: MENU_ICONS.sortAsc,
-              onClick: () => {
-                neutralCol = null;
-                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "asc") });
-              },
+              onClick: () => setSort(setColumnSort(store.get().sort, colMeta.name, "asc")),
             },
             {
               label: "Sort Descending",
               icon: MENU_ICONS.sortDesc,
-              onClick: () => {
-                neutralCol = null;
-                store.set({ sort: setColumnSort(store.get().sort, colMeta.name, "desc") });
-              },
+              onClick: () => setSort(setColumnSort(store.get().sort, colMeta.name, "desc")),
             },
             {
               label: "Clear Sorting",
               icon: MENU_ICONS.clearSort,
               disabled: !colSorted,
-              onClick: () => {
-                neutralCol = null;
-                store.set({ sort: removeColumnSort(store.get().sort, colMeta.name) });
-              },
+              onClick: () => setSort(removeColumnSort(store.get().sort, colMeta.name)),
             },
             { separator: true },
             {
@@ -354,8 +363,7 @@ HTMLWidgets.widget({
               onHeaderMenu: headerMenu,
               onSort: (name, additive) => {
                 if (additive) {
-                  neutralCol = null;
-                  store.set({ sort: cycleSort(store.get().sort, name, true) });
+                  setSort(shiftClickSort(store.get().sort, name));
                   return;
                 }
                 const r = plainClickSort(store.get().sort, neutralCol, name);

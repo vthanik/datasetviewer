@@ -69,6 +69,38 @@ export function splitTopLevelAnd(expr) {
   return parts.map((p) => p.trim()).filter(Boolean);
 }
 
+// Whether a clause has a top-level `or` (outside quotes and parentheses). Such a
+// clause must be parenthesised before it is AND-joined with siblings, or SQL's
+// "AND binds tighter than OR" silently rewrites its meaning.
+export function hasTopLevelOr(expr) {
+  const s = String(expr || "");
+  let depth = 0;
+  let i = 0;
+  while (i < s.length) {
+    const ch = s[i];
+    if (ch === '"' || ch === "'") {
+      i++;
+      while (i < s.length) {
+        if (s[i] === ch) {
+          if (s[i + 1] === ch) {
+            i += 2;
+            continue;
+          }
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    else if (depth === 0 && /^\s+or\s+/i.test(s.slice(i))) return true;
+    i++;
+  }
+  return false;
+}
+
 // The column a clause filters on: the first identifier, ignoring a leading
 // "(" (a parenthesised compound like "(AGE >= 70 and AGE < 80)") or a leading
 // "!"/"not " (a negated free-text clause). Returns null when none is found.
@@ -101,7 +133,9 @@ export function replaceColumnClause(expr, colName, newClause) {
       }
       continue;
     }
-    out.push(seg);
+    // A retained sibling with a top-level `or` must be parenthesised, or
+    // AND-joining it with the new clause flips its precedence (AND > OR).
+    out.push(hasTopLevelOr(seg) ? `(${seg})` : seg);
   }
   if (!replaced) out.push(newClause);
   return out.join(" and ");

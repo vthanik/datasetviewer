@@ -30,6 +30,10 @@ export function createColumnsPanel(container, store, { onCollapse }) {
   let sortMode = "original";
   let filterText = "";
   let prevView = initial.view;
+  // Kind signature: the engine refines coarse load-time kinds (number/string)
+  // into date/datetime/time after it reads the schema; a Type-sort must re-apply
+  // when that happens or it shows a stale order.
+  let prevKindSig = initial.columns.map((c) => c.kind).join(",");
 
   const header = el("div", "dv-cols-header");
   header.appendChild(text("span", "dv-cols-title", "Columns"));
@@ -156,13 +160,22 @@ export function createColumnsPanel(container, store, { onCollapse }) {
       }
     });
 
-    // A names<->labels toggle changes what Name-sort and the filter match on,
-    // so re-apply them -- but only on that transition, not on every toggle.
-    if (state.view !== prevView) {
-      prevView = state.view;
-      if (sortMode === "name-asc" || sortMode === "name-desc") applyOrder(state);
-      if (filterText) applyFilter(state);
+    // Re-apply order/filter only on the transitions that change their result,
+    // not on every checkbox toggle: a names<->labels view change (affects
+    // Name-sort and the label-aware filter) or a kind refinement (affects
+    // Type-sort).
+    const kindSig = state.columns.map((c) => c.kind).join(",");
+    const viewChanged = state.view !== prevView;
+    const kindChanged = kindSig !== prevKindSig;
+    prevView = state.view;
+    prevKindSig = kindSig;
+    if (viewChanged && (sortMode === "name-asc" || sortMode === "name-desc")) {
+      applyOrder(state);
     }
+    if (kindChanged && (sortMode === "type-asc" || sortMode === "type-desc")) {
+      applyOrder(state);
+    }
+    if (viewChanged && filterText) applyFilter(state);
   }
 
   update(initial);

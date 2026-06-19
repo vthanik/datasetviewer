@@ -13,6 +13,17 @@ function csvCell(v) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+// Disambiguate repeated header names by suffixing .1, .2, ... (like R's
+// make.unique), so an exported CSV never has two identically-named columns.
+function uniqueNames(names) {
+  const seen = new Map();
+  return names.map((n) => {
+    const k = seen.get(n) || 0;
+    seen.set(n, k + 1);
+    return k === 0 ? n : `${n}.${k}`;
+  });
+}
+
 export function exportCsv({ engine, store, rowCount }) {
   const state = store.get();
   const selected = state.columns.filter((c) => c.selected);
@@ -20,10 +31,12 @@ export function exportCsv({ engine, store, rowCount }) {
   const order = orderFromSort(state.sort);
 
   // Header row follows the View toggle: column names, or labels in labels view
-  // (falling back to the name when a label is absent).
-  const parts = [
-    selected.map((c) => csvCell(headerText(c, state.view))).join(",") + "\n",
-  ];
+  // (falling back to the name when a label is absent). Labels are not unique
+  // (CDISC frames often repeat e.g. "Description"), so de-duplicate the header
+  // the way R's make.unique would -- a CSV with two identical column names is
+  // ambiguous to readers.
+  const header = uniqueNames(selected.map((c) => headerText(c, state.view)));
+  const parts = [header.map(csvCell).join(",") + "\n"];
 
   function fetchChunk(offset) {
     return engine
