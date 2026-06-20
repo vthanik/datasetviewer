@@ -1084,12 +1084,24 @@
   color: var(--dv-ink-3);
 }
 
-.dv-menu-item:hover:not(.dv-menu-item-disabled) {
-  background: var(--dv-signal-weak);
-  color: var(--dv-signal);
+/* The menu takes focus on open (for Esc / arrow-key navigation); it is appended
+   to document.body, outside the widget root, so suppress the browser's default
+   focus ring on the container itself -- it should not draw a box around the
+   whole menu. Keyboard focus is shown on the items instead (below). */
+.dv-context-menu:focus,
+.dv-context-menu:focus-visible {
+  outline: none;
 }
 
-.dv-menu-item:hover:not(.dv-menu-item-disabled) .dv-menu-icon {
+.dv-menu-item:hover:not(.dv-menu-item-disabled),
+.dv-menu-item:focus:not(.dv-menu-item-disabled) {
+  background: var(--dv-signal-weak);
+  color: var(--dv-signal);
+  outline: none;
+}
+
+.dv-menu-item:hover:not(.dv-menu-item-disabled) .dv-menu-icon,
+.dv-menu-item:focus:not(.dv-menu-item-disabled) .dv-menu-icon {
   color: var(--dv-signal);
 }
 
