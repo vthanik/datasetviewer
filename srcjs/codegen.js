@@ -3,6 +3,8 @@
 // the SAS Studio-style "Show code" button: produced on demand, copy-paste
 // reproducible, and always prefixed with library(dplyr).
 
+import { scanRuns } from "./filter_scan.js";
+
 // Backtick a column name only when it is not a syntactic R name.
 function bt(name) {
   return /^[A-Za-z.][A-Za-z0-9._]*$/.test(name) ? name : "`" + name + "`";
@@ -55,59 +57,13 @@ function convertTypedLiterals(s) {
 // double-quoted R strings; everything outside strings is operator-translated.
 export function dplyrFilterFromExpr(expr, canon) {
   if (!expr || !String(expr).trim()) return "";
-  const s = String(expr).trim();
-  let out = "";
-  let seg = "";
-  let i = 0;
-  const flush = () => {
-    out += translateSegment(seg, canon);
-    seg = "";
-  };
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"') {
-      flush();
-      let run = '"';
-      i++;
-      while (i < s.length) {
-        if (s[i] === '"') {
-          if (s[i + 1] === '"') {
-            run += '\\"';
-            i += 2;
-            continue;
-          }
-          run += '"';
-          i++;
-          break;
-        }
-        run += s[i];
-        i++;
-      }
-      out += run;
-    } else if (ch === "'") {
-      flush();
-      let val = "";
-      i++;
-      while (i < s.length) {
-        if (s[i] === "'") {
-          if (s[i + 1] === "'") {
-            val += "'";
-            i += 2;
-            continue;
-          }
-          i++;
-          break;
-        }
-        val += s[i];
-        i++;
-      }
-      out += '"' + val.replace(/"/g, '\\"') + '"';
-    } else {
-      seg += ch;
-      i++;
-    }
-  }
-  flush();
+  // Every quoted run (typed with " or ') becomes an R double-quoted string,
+  // escaping embedded double quotes. Unquoted runs are operator-translated.
+  const out = scanRuns(String(expr).trim())
+    .map((r) =>
+      r.q ? '"' + r.value.replace(/"/g, '\\"') + '"' : translateSegment(r.value, canon)
+    )
+    .join("");
   return convertTypedLiterals(out).trim();
 }
 

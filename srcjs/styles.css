@@ -76,9 +76,7 @@
 .datasetviewer-root *::before,
 .datasetviewer-root *::after,
 .dv-context-menu,
-.dv-context-menu *,
-.dv-cal,
-.dv-cal * {
+.dv-context-menu * {
   box-sizing: border-box;
 }
 
@@ -856,8 +854,7 @@ label.dv-af-missing {
   color: var(--dv-ink);
 }
 
-.dv-af-val,
-.dv-af-critinput {
+.dv-af-val {
   font-family: var(--dv-sans);
   font-size: 12px;
   flex: 1 1 auto;
@@ -866,8 +863,7 @@ label.dv-af-missing {
   border-radius: var(--dv-radius);
   color: var(--dv-ink);
 }
-.dv-af-val:focus,
-.dv-af-critinput:focus {
+.dv-af-val:focus {
   outline: none;
   border-color: var(--dv-signal);
   box-shadow: 0 0 0 3px var(--dv-signal-weak);
@@ -901,165 +897,21 @@ label.dv-af-missing {
   font-size: 12px;
 }
 
-/* ---- Custom date field + calendar ----------------------------------- */
+/* ---- Native date / datetime / time fields --------------------------- */
 .dv-date-field {
   flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--dv-rule);
-  border-radius: var(--dv-radius);
-  background: var(--dv-canvas);
-  overflow: hidden;
-}
-.dv-date-field:focus-within {
-  border-color: var(--dv-signal);
-  box-shadow: 0 0 0 3px var(--dv-signal-weak);
-}
-
-.dv-date-input {
-  flex: 1 1 auto;
-  border: none;
-  outline: none;
   font-family: var(--dv-sans);
   font-size: 12px;
   padding: 5px 8px;
-  color: var(--dv-ink);
-  background: transparent;
-  cursor: pointer;
-}
-
-.dv-date-btn {
-  border: none;
-  background: transparent;
-  color: var(--dv-signal);
-  cursor: pointer;
-  padding: 0 8px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.dv-cal {
-  position: fixed;
-  z-index: 100001;
-  width: 264px;
-  background: var(--dv-canvas);
-  border: 1px solid var(--dv-rule);
-  border-radius: var(--dv-radius-lg);
-  box-shadow: 0 12px 36px rgba(21, 33, 43, 0.18);
-  padding: 11px;
-  font-family: var(--dv-sans);
-  font-size: 13px;
-  color: var(--dv-ink);
-}
-
-.dv-cal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.dv-cal-nav {
-  width: 26px;
-  height: 26px;
-  border: 1px solid transparent;
-  border-radius: var(--dv-radius);
-  background: transparent;
-  cursor: pointer;
-  font-size: 18px;
-  color: var(--dv-signal);
-  line-height: 1;
-}
-.dv-cal-nav:hover {
-  background: var(--dv-paper-2);
-}
-
-.dv-cal-month {
-  width: 130px; /* fixed so "May" vs "September" never shifts the layout */
-  font: inherit;
-  padding: 4px 6px;
   border: 1px solid var(--dv-rule);
   border-radius: var(--dv-radius);
   background: var(--dv-canvas);
   color: var(--dv-ink);
-  text-align: center;
-  text-align-last: center; /* centers the selected value in the closed select */
 }
-
-.dv-cal-wd,
-.dv-cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.dv-cal-wdc {
-  text-align: center;
-  color: var(--dv-ink-3);
-  font-size: 11px;
-  padding: 4px 0;
-}
-
-.dv-cal-day {
-  border: 1px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  padding: 6px 0;
-  border-radius: var(--dv-radius);
-  font-family: var(--dv-sans);
-  font-size: 12px;
-  color: var(--dv-ink);
-}
-.dv-cal-day:hover {
-  background: var(--dv-paper-2);
-}
-.dv-cal-day.muted {
-  color: var(--dv-rule);
-}
-.dv-cal-day.today {
+.dv-date-field:focus {
+  outline: none;
   border-color: var(--dv-signal);
-}
-.dv-cal-day.selected {
-  background: var(--dv-signal);
-  color: #fff;
-}
-
-.dv-cal-years {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 8px;
-}
-
-.dv-cal-year {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  color: var(--dv-ink-2);
-}
-.dv-cal-year.current {
-  font-weight: 700;
-  color: var(--dv-ink);
-}
-
-.dv-cal-foot {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--dv-rule-2);
-}
-
-.dv-cal-link {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  color: var(--dv-signal);
-}
-.dv-cal-link:hover {
-  text-decoration: underline;
+  box-shadow: 0 0 0 3px var(--dv-signal-weak);
 }
 
 /* ---- Context menu --------------------------------------------------- */

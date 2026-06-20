@@ -6,7 +6,7 @@
 
 import "./styles.css";
 import { createStore, initialState, headerText } from "./state.js";
-import { createEngine } from "./engine/engine.js";
+import { createEngine } from "./engine/engine_duckdb.js";
 import { b64ToBytes } from "./parquet_decode.js";
 import { whereFromExpr, orderFromSort } from "./sql.js";
 import { replaceColumnClause } from "./filter_expr.js";
@@ -29,12 +29,7 @@ import { showContextMenu } from "./shell/context_menu.js";
 import { exportCsv } from "./shell/export.js";
 import { wireShiny } from "./shiny.js";
 import { ICONS, MENU_ICONS } from "./shell/icons.js";
-
-function div(className) {
-  const e = document.createElement("div");
-  if (className) e.className = className;
-  return e;
-}
+import { div } from "./shell/dom.js";
 
 HTMLWidgets.widget({
   name: "datasetviewer",

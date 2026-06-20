@@ -5,6 +5,8 @@
 // must not regress the keyboard access of the native control it replaces. Focus
 // returns to the opener on close.
 
+import { div } from "./dom.js";
+
 export function showContextMenu(x, y, items, opener) {
   closeAny();
 
@@ -102,10 +104,4 @@ function closeAny() {
     m.remove();
     if (rf && typeof rf.focus === "function") rf.focus();
   });
-}
-
-function div(className) {
-  const e = document.createElement("div");
-  e.className = className;
-  return e;
 }

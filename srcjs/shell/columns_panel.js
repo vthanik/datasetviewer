@@ -13,6 +13,7 @@
 import { typeIcon, ICONS, MENU_ICONS } from "./icons.js";
 import { showContextMenu } from "./context_menu.js";
 import { headerText, columnSortOrder } from "../state.js";
+import { el, text } from "./dom.js";
 
 const SORT_OPTIONS = [
   ["original", "Sort by Original"],
@@ -205,16 +206,4 @@ export function createColumnsPanel(container, store, { onCollapse }) {
 
   update(initial);
   store.subscribe(update);
-}
-
-function el(tag, className) {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  return e;
-}
-
-function text(tag, className, content) {
-  const e = el(tag, className);
-  e.textContent = content;
-  return e;
 }

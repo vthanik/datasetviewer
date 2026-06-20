@@ -3,6 +3,8 @@
 // Informat is omitted: it is a SAS read-time parsing concept with no meaning
 // for already-loaded R data.
 
+import { text } from "./dom.js";
+
 const FIELDS = [
   ["Label", "label"],
   ["Name", "name"],
@@ -20,15 +22,15 @@ export function createPropertyPanel(container, store) {
     table.className = "dv-prop-table";
 
     const head = document.createElement("tr");
-    head.appendChild(th("Property"));
-    head.appendChild(th("Value"));
+    head.appendChild(text("th", null, "Property"));
+    head.appendChild(text("th", null, "Value"));
     table.appendChild(head);
 
     FIELDS.forEach(([label, key]) => {
       const tr = document.createElement("tr");
-      tr.appendChild(td(label, "dv-prop-name"));
+      tr.appendChild(text("td", "dv-prop-name", label));
       const value = col && col[key] !== undefined && col[key] !== "" ? col[key] : "";
-      tr.appendChild(td(String(value), "dv-prop-value"));
+      tr.appendChild(text("td", "dv-prop-value", String(value)));
       table.appendChild(tr);
     });
 
@@ -37,17 +39,4 @@ export function createPropertyPanel(container, store) {
 
   render(store.get());
   store.subscribe(render);
-}
-
-function th(textContent) {
-  const e = document.createElement("th");
-  e.textContent = textContent;
-  return e;
-}
-
-function td(textContent, className) {
-  const e = document.createElement("td");
-  e.textContent = textContent;
-  if (className) e.className = className;
-  return e;
 }

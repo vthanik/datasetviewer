@@ -6,64 +6,41 @@
 // for other columns intact -- otherwise re-filtering a column produces a
 // contradictory `rincome in (...) and rincome = "..."`.
 //
-// splitTopLevelAnd mirrors sql.js whereFromExpr's tokenizer: it consumes
-// double-quoted runs ("" is an escaped ") and single-quoted runs ('' is an
-// escaped ', used by DATE '...' / TIMESTAMP '...' / TIME '...') wholesale, and
-// only treats " and " as a separator at parenthesis depth 0 and outside any
-// quoted run. So a value containing " and ", "(", or a quote -- e.g.
+// splitTopLevelAnd and hasTopLevelOr scan over filter_scan's runs: a quoted run
+// is opaque (kept verbatim via requote / skipped), and the keyword/paren scan
+// only runs on raw runs. So a value containing " and ", "(", or "or" -- e.g.
 // "safe and sound" or "AMERICAN INDIAN OR ALASKA NATIVE" -- is never mis-split.
+
+import { scanRuns, requote } from "./filter_scan.js";
 
 // Split an expression into its top-level AND-clauses.
 export function splitTopLevelAnd(expr) {
-  const s = String(expr || "");
   const parts = [];
   let buf = "";
   let depth = 0;
-  let i = 0;
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"' || ch === "'") {
-      // Consume the whole quoted run, including doubled escapes ("" / '').
-      buf += ch;
-      i++;
-      while (i < s.length) {
-        buf += s[i];
-        if (s[i] === ch) {
-          if (s[i + 1] === ch) {
-            buf += s[i + 1];
-            i += 2;
-            continue;
-          }
-          i++;
-          break;
+  for (const r of scanRuns(expr)) {
+    if (r.q) {
+      buf += requote(r);
+      continue;
+    }
+    const s = r.value;
+    let i = 0;
+    while (i < s.length) {
+      const ch = s[i];
+      if (ch === "(") depth++;
+      else if (ch === ")") depth--;
+      else if (depth === 0) {
+        const m = s.slice(i).match(/^\s+and\s+/i);
+        if (m) {
+          parts.push(buf);
+          buf = "";
+          i += m[0].length;
+          continue;
         }
-        i++;
       }
-      continue;
-    }
-    if (ch === "(") {
-      depth++;
       buf += ch;
       i++;
-      continue;
     }
-    if (ch === ")") {
-      depth--;
-      buf += ch;
-      i++;
-      continue;
-    }
-    if (depth === 0) {
-      const m = s.slice(i).match(/^\s+and\s+/i);
-      if (m) {
-        parts.push(buf);
-        buf = "";
-        i += m[0].length;
-        continue;
-      }
-    }
-    buf += ch;
-    i++;
   }
   if (buf.trim()) parts.push(buf);
   return parts.map((p) => p.trim()).filter(Boolean);
@@ -73,30 +50,15 @@ export function splitTopLevelAnd(expr) {
 // clause must be parenthesised before it is AND-joined with siblings, or SQL's
 // "AND binds tighter than OR" silently rewrites its meaning.
 export function hasTopLevelOr(expr) {
-  const s = String(expr || "");
   let depth = 0;
-  let i = 0;
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"' || ch === "'") {
-      i++;
-      while (i < s.length) {
-        if (s[i] === ch) {
-          if (s[i + 1] === ch) {
-            i += 2;
-            continue;
-          }
-          i++;
-          break;
-        }
-        i++;
-      }
-      continue;
+  for (const r of scanRuns(expr)) {
+    if (r.q) continue;
+    const s = r.value;
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === "(") depth++;
+      else if (s[i] === ")") depth--;
+      else if (depth === 0 && /^\s+or\s+/i.test(s.slice(i))) return true;
     }
-    if (ch === "(") depth++;
-    else if (ch === ")") depth--;
-    else if (depth === 0 && /^\s+or\s+/i.test(s.slice(i))) return true;
-    i++;
   }
   return false;
 }

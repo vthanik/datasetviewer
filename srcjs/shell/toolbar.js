@@ -3,6 +3,7 @@
 // pagination controls showing the current visible row range.
 
 import { ICONS } from "./icons.js";
+import { el, text } from "./dom.js";
 
 export function createToolbar(
   container,
@@ -112,16 +113,4 @@ function pagerButton(svg, title, onClick) {
 
 function sep() {
   return el("span", "dv-tb-sep");
-}
-
-function el(tag, className) {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  return e;
-}
-
-function text(tag, className, content) {
-  const e = el(tag, className);
-  e.textContent = content;
-  return e;
 }

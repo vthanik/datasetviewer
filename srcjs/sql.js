@@ -1,11 +1,11 @@
 // Build DuckDB SQL fragments from the view state.
 //
 // The filter is a free-text expression (SAS "Filter Table Rows" style). Users
-// write string values in double quotes (SEX = "M"); we translate each
-// double-quoted run into a SQL single-quoted literal, doubling any embedded
-// single quote so values like "O'Brien" become 'O''Brien'. SAS-style embedded
-// double quotes are written as "" and collapse to one ". Single-quoted runs
-// the user typed are passed through unchanged.
+// write string values in double quotes (SEX = "M"); we translate each quoted
+// run into a SQL single-quoted literal, doubling any embedded single quote so
+// values like "O'Brien" become 'O''Brien'. Quote scanning lives in filter_scan.
+
+import { scanRuns } from "./filter_scan.js";
 
 // Translate the missing-value predicate on a NON-STRING segment only (so a
 // value the user quoted, like 'is na', is never rewritten). "COL is na" ->
@@ -20,61 +20,14 @@ function translateMissingSql(seg) {
 
 export function whereFromExpr(expr) {
   if (!expr || !String(expr).trim()) return "";
-  const s = String(expr).trim();
-  let out = "";
-  let seg = "";
-  let i = 0;
-  // Flush the accumulated non-string run through the segment translators.
-  const flush = () => {
-    out += translateMissingSql(seg);
-    seg = "";
-  };
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"') {
-      // Read a double-quoted run; "" is an escaped double quote.
-      flush();
-      let val = "";
-      i++;
-      while (i < s.length) {
-        if (s[i] === '"') {
-          if (s[i + 1] === '"') {
-            val += '"';
-            i += 2;
-            continue;
-          }
-          i++;
-          break;
-        }
-        val += s[i];
-        i++;
-      }
-      out += `'${val.replace(/'/g, "''")}'`;
-    } else if (ch === "'") {
-      // Pass a single-quoted SQL literal through verbatim ('' stays escaped).
-      flush();
-      out += ch;
-      i++;
-      while (i < s.length) {
-        out += s[i];
-        if (s[i] === "'") {
-          if (s[i + 1] === "'") {
-            out += s[i + 1];
-            i += 2;
-            continue;
-          }
-          i++;
-          break;
-        }
-        i++;
-      }
-    } else {
-      seg += ch;
-      i++;
-    }
-  }
-  flush();
-  return out;
+  // Every quoted run (typed with " or ') becomes a SQL single-quoted literal,
+  // re-escaping embedded single quotes as ''. Unquoted runs get the missing
+  // predicate translated; everything else passes through.
+  return scanRuns(String(expr).trim())
+    .map((r) =>
+      r.q ? `'${r.value.replace(/'/g, "''")}'` : translateMissingSql(r.value)
+    )
+    .join("");
 }
 
 export function orderFromSort(sort) {

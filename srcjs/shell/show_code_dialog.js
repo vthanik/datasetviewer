@@ -3,6 +3,8 @@
 // syntax highlighting and a Copy button. The code is a snapshot -- editing it
 // here does nothing to the table, matching SAS Studio's behaviour.
 
+import { el, text } from "./dom.js";
+
 export function createShowCodeDialog(host, { getCode }) {
   function open() {
     close();
@@ -116,16 +118,4 @@ export function highlightR(code) {
     }
   }
   return out;
-}
-
-function el(tag, className) {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  return e;
-}
-
-function text(tag, className, content) {
-  const e = el(tag, className);
-  e.textContent = content;
-  return e;
 }

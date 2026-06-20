@@ -10,6 +10,7 @@
 // existing clause for that column -- validated by the engine.
 
 import { createDateField } from "./datepicker.js";
+import { el, text as textNode } from "./dom.js";
 
 const NUM_OPS = [
   ["=", "="],
@@ -59,9 +60,7 @@ export function createAddFilterDialog(host, { getDistinct, onApply }) {
       modal
         .querySelectorAll('input[type="checkbox"]')
         .forEach((c) => (c.checked = false));
-      modal
-        .querySelectorAll(".dv-af-val, .dv-af-critinput")
-        .forEach((i) => (i.value = ""));
+      modal.querySelectorAll(".dv-af-val").forEach((i) => (i.value = ""));
       // Custom date fields hold their value in a closure, not the input, so
       // reset them through the hook the field registers on its wrapper.
       modal
@@ -121,7 +120,7 @@ function buildValues(modal, colMeta, getDistinct) {
       const hr = el("tr");
       // One "Value" column: factors arrive as character, so a separate
       // "Formatted Value" column would only repeat it.
-      hr.appendChild(thNode("Value"));
+      hr.appendChild(textNode("th", null, "Value"));
       table.appendChild(hr);
       // Offer "(Missing)" first (when present) so filtering to NA is one click.
       if (hasNull) missingCb = appendMissingRow(table);
@@ -210,22 +209,12 @@ function buildDateTime(modal, colMeta, kind) {
     textNode("div", "dv-af-prompt", `Specify the criteria for "${colMeta.name}"`)
   );
 
-  // Date and datetime use the elegant custom calendar; time uses a native
-  // time input. Each field exposes value().
-  function makeField() {
-    if (kind === "time") {
-      const i = el("input", "dv-af-critinput");
-      i.type = "time";
-      i.step = 1;
-      return { el: i, value: () => i.value };
-    }
-    return createDateField();
-  }
-
+  // Native date / datetime / time field for this column kind; each exposes
+  // value() as the canonical string the typed SQL literal expects.
   function crit(label) {
     const wrap = el("div", "dv-af-crit");
     wrap.appendChild(textNode("label", "dv-af-critlabel", label));
-    const field = makeField();
+    const field = createDateField(kind);
     wrap.appendChild(field.el);
     modal.appendChild(wrap);
     return field;
@@ -291,19 +280,4 @@ function appendMissingCheckbox(modal) {
 function shortMsg(e) {
   const s = String((e && e.message) || e);
   return s.length > 140 ? s.slice(0, 140) + "..." : s;
-}
-function el(tag, className) {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  return e;
-}
-function textNode(tag, className, content) {
-  const e = el(tag, className);
-  e.textContent = content;
-  return e;
-}
-function thNode(t) {
-  const e = document.createElement("th");
-  e.textContent = t;
-  return e;
 }

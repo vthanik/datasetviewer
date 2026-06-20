@@ -4,6 +4,8 @@
 // caller (which runs the expression as a count) so an invalid expression keeps
 // the dialog open with an error instead of silently failing.
 
+import { el, text as textNode } from "./dom.js";
+
 export function createFilterDialog(host, { getExpr, onApply, onClear }) {
   function open(prefill) {
     close();
@@ -162,18 +164,6 @@ export function createFilterDialog(host, { getExpr, onApply, onClear }) {
 function shortMsg(e) {
   const s = String((e && e.message) || e);
   return s.length > 160 ? s.slice(0, 160) + "..." : s;
-}
-
-function el(tag, className) {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  return e;
-}
-
-function textNode(tag, className, content) {
-  const e = el(tag, className);
-  e.textContent = content;
-  return e;
 }
 
 // A content-width, syntax-highlighted example box for the help dialog.
