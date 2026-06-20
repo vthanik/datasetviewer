@@ -8,11 +8,11 @@
 
 import * as duckdb from "@duckdb/duckdb-wasm";
 import { Type } from "apache-arrow";
+import { quoteId, colSelect, colExpr } from "./sql_expr.js";
 
 const VIEW = "dv_data";
 const FILE = "dv_data.parquet";
 const DISTINCT_LIMIT = 1000;
-const TEMPORAL = new Set(["date", "datetime", "time"]);
 
 // Map an Arrow column type to a coarse display/alignment kind.
 function kindOf(type) {
@@ -32,19 +32,6 @@ function kindOf(type) {
     default:
       return "string";
   }
-}
-
-function quoteId(name) {
-  return `"${String(name).replace(/"/g, '""')}"`;
-}
-
-// SQL select expression for a column. Temporal columns are cast to text in
-// DuckDB (which yields canonical ISO strings) so the browser never has to
-// reason about Arrow time units, and so date/time/timestamp all display
-// correctly regardless of precision.
-function colExpr(col) {
-  const id = quoteId(col.name);
-  return TEMPORAL.has(col.kind) ? `CAST(${id} AS VARCHAR) AS ${id}` : id;
 }
 
 // Format a single value for display. Temporal values arrive as strings (cast
@@ -175,10 +162,9 @@ export async function createEngine() {
     // list and offer a "(Missing)" entry when the column has any NULL.
     async distinct(name) {
       const col = columns.find((c) => c.name === name) || { name, kind: "string" };
-      const expr = colExpr(col).replace(/ AS .*/, "");
       const id = quoteId(name);
       const t = await conn.query(
-        `SELECT DISTINCT ${expr} AS v FROM ${VIEW} WHERE ${id} IS NOT NULL ORDER BY 1 LIMIT ${DISTINCT_LIMIT + 1}`
+        `SELECT DISTINCT ${colSelect(col)} AS v FROM ${VIEW} WHERE ${id} IS NOT NULL ORDER BY 1 LIMIT ${DISTINCT_LIMIT + 1}`
       );
       const vec = t.getChildAt(0);
       const all = [...vec].map((v) => fmtVal(v, { kind: "string" }));
@@ -198,7 +184,7 @@ export async function createEngine() {
       const w = where ? ` WHERE ${where}` : "";
       const o = order ? ` ORDER BY ${order}` : "";
       const t = await conn.query(
-        `SELECT ${colExpr(col).replace(/ AS .*/, "")} AS v FROM ${VIEW}${w}${o}`
+        `SELECT ${colSelect(col)} AS v FROM ${VIEW}${w}${o}`
       );
       // get()-based read (via iteration) so a NULL stays null, not 0/NaN.
       return [...t.getChildAt(0)].map((v) => fmtVal(v, col));
