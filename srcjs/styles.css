@@ -777,6 +777,21 @@
   font-size: 12px;
 }
 
+/* "(Missing)" option: a muted row in the values table, or a standalone
+   checkbox under the numeric / date criteria. */
+.dv-af-table tr.dv-af-missing td {
+  color: var(--dv-ink-3);
+}
+label.dv-af-missing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--dv-ink-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .dv-af-values {
   border: 1px solid var(--dv-rule);
   border-radius: var(--dv-radius);

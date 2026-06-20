@@ -127,6 +127,20 @@ export function createFilterDialog(host, { getExpr, onApply, onClear }) {
     );
     modal.appendChild(ex);
 
+    // Missing-value predicate.
+    const miss = el("p", "dv-help-p");
+    miss.appendChild(document.createTextNode("Match missing (NA) values with "));
+    miss.appendChild(textNode("code", "dv-help-kw", "is na"));
+    miss.appendChild(document.createTextNode(" / "));
+    miss.appendChild(textNode("code", "dv-help-kw", "is not na"));
+    miss.appendChild(document.createTextNode(":"));
+    modal.appendChild(miss);
+    const exNa = el("div", "dv-help-examples");
+    ["AENDT is na", "AGE is not na"].forEach((e) =>
+      exNa.appendChild(codeBlock(e))
+    );
+    modal.appendChild(exNa);
+
     overlay.appendChild(modal);
     overlay.addEventListener("mousedown", (e) => {
       if (e.target === overlay) closeHelp();

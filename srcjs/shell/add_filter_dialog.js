@@ -113,8 +113,9 @@ function buildValues(modal, colMeta, getDistinct) {
   modal.appendChild(tableWrap);
 
   const checks = [];
+  let missingCb = null; // a "(Missing)" row, added only when the column has NAs
   getDistinct(colMeta.name)
-    .then(({ values, truncated }) => {
+    .then(({ values, truncated, hasNull }) => {
       tableWrap.innerHTML = "";
       const table = el("table", "dv-af-table");
       const hr = el("tr");
@@ -122,6 +123,8 @@ function buildValues(modal, colMeta, getDistinct) {
       // "Formatted Value" column would only repeat it.
       hr.appendChild(thNode("Value"));
       table.appendChild(hr);
+      // Offer "(Missing)" first (when present) so filtering to NA is one click.
+      if (hasNull) missingCb = appendMissingRow(table);
       values.forEach((v) => {
         const tr = el("tr");
         const cb = document.createElement("input");
@@ -150,12 +153,13 @@ function buildValues(modal, colMeta, getDistinct) {
 
   return function () {
     const vals = checks.filter((c) => c.checked).map((c) => c.value);
-    if (!vals.length) return "";
     // Escape embedded double quotes as "" (SAS style) so whereFromExpr
     // reconstructs the exact value; apostrophes are handled downstream.
     const q = (s) => '"' + s.replace(/"/g, '""') + '"';
-    if (vals.length === 1) return `${colMeta.name} = ${q(vals[0])}`;
-    return `${colMeta.name} in (${vals.map(q).join(", ")})`;
+    let base = "";
+    if (vals.length === 1) base = `${colMeta.name} = ${q(vals[0])}`;
+    else if (vals.length) base = `${colMeta.name} in (${vals.map(q).join(", ")})`;
+    return combineMissing(base, missingCb && missingCb.checked, colMeta.name);
   };
 }
 
@@ -190,12 +194,13 @@ function buildNumber(modal, colMeta) {
     rows.push({ op, val });
   }
   addRow();
+  const missingCb = appendMissingCheckbox(modal);
 
   return function () {
     const parts = rows
       .filter((r) => String(r.val.value).trim() !== "")
       .map((r) => `${colMeta.name} ${r.op.value} ${String(r.val.value).trim()}`);
-    return parts.join(" and ");
+    return combineMissing(parts.join(" and "), missingCb.checked, colMeta.name);
   };
 }
 
@@ -228,6 +233,7 @@ function buildDateTime(modal, colMeta, kind) {
   const eq = crit("Equal to:");
   const lt = crit("Less than:");
   const gt = crit("Greater than:");
+  const missingCb = appendMissingCheckbox(modal);
 
   // Emit a typed SQL literal so comparisons are real date/time comparisons,
   // not fragile string-vs-date casts. These pass through whereFromExpr
@@ -240,8 +246,45 @@ function buildDateTime(modal, colMeta, kind) {
     if (eq.value()) parts.push(`${colMeta.name} = ${lit(eq.value())}`);
     if (lt.value()) parts.push(`${colMeta.name} < ${lit(lt.value())}`);
     if (gt.value()) parts.push(`${colMeta.name} > ${lit(gt.value())}`);
-    return parts.join(" and ");
+    return combineMissing(parts.join(" and "), missingCb.checked, colMeta.name);
   };
+}
+
+// ---- missing-value option (shared across the three builders) ---------
+// OR the "(Missing)" clause onto the criteria the user set. Empty criteria +
+// missing -> just "COL is na"; criteria + missing -> "(criteria) or COL is na"
+// (the criteria are parenthesised so the OR binds the whole group).
+function combineMissing(expr, missing, name) {
+  if (!missing) return expr;
+  const na = `${name} is na`;
+  return expr ? `(${expr}) or ${na}` : na;
+}
+
+// A "(Missing)" checkbox row inside the categorical values table.
+function appendMissingRow(table) {
+  const tr = el("tr", "dv-af-missing");
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  const td = el("td");
+  td.appendChild(cb);
+  td.appendChild(textNode("em", null, " (Missing)"));
+  tr.appendChild(td);
+  tr.addEventListener("click", (e) => {
+    if (e.target !== cb) cb.checked = !cb.checked;
+  });
+  table.appendChild(tr);
+  return cb;
+}
+
+// A standalone "(Missing)" checkbox for the numeric / date builders.
+function appendMissingCheckbox(modal) {
+  const wrap = el("label", "dv-af-missing");
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  wrap.appendChild(cb);
+  wrap.appendChild(textNode("span", null, " Include missing (NA) values"));
+  modal.appendChild(wrap);
+  return cb;
 }
 
 // ---- helpers ---------------------------------------------------------

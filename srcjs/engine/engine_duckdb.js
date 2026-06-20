@@ -60,15 +60,22 @@ function fmtVal(v, col) {
 // Arrow's StructRow name resolution, which would (a) return prototype members
 // for columns named like Object keys (constructor, toString, ...) and (b)
 // collapse duplicate column names onto the first match.
+//
+// Read each cell with Vector.get(r), NOT Vector.toArray(): toArray() on a
+// numeric column returns a TypedArray, which cannot hold null, so a missing
+// value (SQL NULL) silently becomes 0 (Int) or NaN (Float). get() honors the
+// validity bitmap and yields a real null for every type, which fmtVal maps to
+// the missing-value display. A genuine NaN value (validity set) still reads
+// back as NaN and is rendered as such.
 function tableToRows(table, columns) {
   const ncol = table.numCols;
-  const cols = [];
-  for (let c = 0; c < ncol; c++) cols.push(table.getChildAt(c).toArray());
+  const vecs = [];
+  for (let c = 0; c < ncol; c++) vecs.push(table.getChildAt(c));
   const nrow = table.numRows;
   const rows = new Array(nrow);
   for (let r = 0; r < nrow; r++) {
     const row = new Array(ncol);
-    for (let c = 0; c < ncol; c++) row[c] = fmtVal(cols[c][r], columns[c]);
+    for (let c = 0; c < ncol; c++) row[c] = fmtVal(vecs[c].get(r), columns[c]);
     rows[r] = row;
   }
   return rows;
@@ -164,7 +171,8 @@ export async function createEngine() {
     },
 
     // Distinct non-null values of a column (for the categorical filter).
-    // Returns { values, truncated } so the dialog can flag a capped list.
+    // Returns { values, truncated, hasNull } so the dialog can flag a capped
+    // list and offer a "(Missing)" entry when the column has any NULL.
     async distinct(name) {
       const col = columns.find((c) => c.name === name) || { name, kind: "string" };
       const expr = colExpr(col).replace(/ AS .*/, "");
@@ -172,10 +180,15 @@ export async function createEngine() {
       const t = await conn.query(
         `SELECT DISTINCT ${expr} AS v FROM ${VIEW} WHERE ${id} IS NOT NULL ORDER BY 1 LIMIT ${DISTINCT_LIMIT + 1}`
       );
-      const all = t.toArray().map((r) => fmtVal(r.v, { kind: "string" }));
+      const vec = t.getChildAt(0);
+      const all = [...vec].map((v) => fmtVal(v, { kind: "string" }));
+      const nt = await conn.query(
+        `SELECT count(*) FILTER (WHERE ${id} IS NULL) AS n FROM ${VIEW}`
+      );
       return {
         values: all.slice(0, DISTINCT_LIMIT),
         truncated: all.length > DISTINCT_LIMIT,
+        hasNull: Number(nt.toArray()[0].n) > 0,
       };
     },
 
@@ -187,7 +200,8 @@ export async function createEngine() {
       const t = await conn.query(
         `SELECT ${colExpr(col).replace(/ AS .*/, "")} AS v FROM ${VIEW}${w}${o}`
       );
-      return t.getChildAt(0).toArray().map((v) => fmtVal(v, col));
+      // get()-based read (via iteration) so a NULL stays null, not 0/NaN.
+      return [...t.getChildAt(0)].map((v) => fmtVal(v, col));
     },
 
     // Row count under an optional filter.

@@ -36,6 +36,22 @@ test("SQL IN / NOT IN translate to %in% c(...) / !x %in% c(...)", () => {
   );
 });
 
+test("the missing-value predicate translates to is.na() / !is.na()", () => {
+  assert.equal(dplyrFilterFromExpr("AGE is na"), "is.na(AGE)");
+  assert.equal(dplyrFilterFromExpr("AGE is not na"), "!is.na(AGE)");
+  assert.equal(
+    dplyrFilterFromExpr('SEX is na and RACE = "WHITE"'),
+    'is.na(SEX) & RACE == "WHITE"'
+  );
+});
+
+test("'is na' inside a string value is not translated", () => {
+  assert.equal(
+    dplyrFilterFromExpr('NOTE = "is na"'),
+    'NOTE == "is na"'
+  );
+});
+
 test("SQL-typed date/time literals become R constructors", () => {
   assert.equal(
     dplyrFilterFromExpr("TRTSDT >= DATE '2014-01-01'"),

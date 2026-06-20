@@ -33,6 +33,22 @@ test("whereFromExpr passes single-quoted SQL literals through verbatim", () => {
   assert.equal(whereFromExpr("X = 'a''b'"), "X = 'a''b'");
 });
 
+test("whereFromExpr translates the missing-value predicate to IS NULL", () => {
+  assert.equal(whereFromExpr("AGE is na"), "AGE IS NULL");
+  assert.equal(whereFromExpr("AGE is not na"), "AGE IS NOT NULL");
+  assert.equal(whereFromExpr("AGE IS NA"), "AGE IS NULL"); // case-insensitive
+  assert.equal(
+    whereFromExpr("SEX is na and AGE > 50"),
+    "SEX IS NULL and AGE > 50"
+  );
+});
+
+test("whereFromExpr does NOT rewrite 'is na' inside a string value", () => {
+  // The literal value "is na" is data, not the predicate.
+  assert.equal(whereFromExpr('NOTE = "is na"'), "NOTE = 'is na'");
+  assert.equal(whereFromExpr("NOTE = 'is na'"), "NOTE = 'is na'");
+});
+
 test("orderFromSort builds quoted ORDER BY with direction", () => {
   assert.equal(orderFromSort([]), "");
   assert.equal(orderFromSort([{ name: "AGE", dir: "desc" }]), '"AGE" DESC');

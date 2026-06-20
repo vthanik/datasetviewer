@@ -14,6 +14,10 @@ function bt(name) {
 // single space on each side, matching air's formatting convention.
 function translateSegment(seg, canon) {
   let t = seg
+    // Missing-value predicate first, before the bare "not"/"=" passes would
+    // mangle "is not na". COL is na -> is.na(COL); is not na -> !is.na(COL).
+    .replace(/([A-Za-z.][\w.]*)\s+is\s+not\s+na\b/gi, "!is.na($1)")
+    .replace(/([A-Za-z.][\w.]*)\s+is\s+na\b/gi, "is.na($1)")
     .replace(/([A-Za-z.][\w.]*)\s+not\s+in\s*\(/gi, "!$1 %in% c(") // NOT IN (..)
     .replace(/\bin\s*\(/gi, "%in% c(") // SQL IN (...) -> R %in% c(...)
     .replace(/<>/g, "!=")

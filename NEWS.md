@@ -18,6 +18,12 @@
   just that column) and offers per-column filters, copying a column or its
   header, and size-to-content, alongside a free-text row filter and CSV export
   of the current view.
+* Missing values display as a muted `NA` in every column (numeric, character,
+  and date), keeping them distinct from a genuine empty string and from the
+  `NaN` floating-point value, which renders as `NaN`. They can be filtered with
+  the `COL is na` / `COL is not na` free-text predicate or the per-column
+  "(Missing)" option in the Add Filter dialog; the generated `dplyr` code uses
+  `is.na()`.
 * `datasetviewerOutput()` and `renderDatasetViewer()` embed the widget in
   Shiny and publish the current filter, sort, column selection, and view mode
   as inputs.

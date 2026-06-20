@@ -52,3 +52,12 @@ test("unquoted character value (a bareword, not a column) is rejected", () => {
 test("no kind map -> no validation", () => {
   assert.doesNotThrow(() => validateFilterTypes('TRT01AN = "0"', undefined));
 });
+
+test("the missing-value predicate passes validation for any column type", () => {
+  // "COL is na" is unary (no RHS literal), so the type checker must not flag
+  // the bareword "na" as an unquoted character value or a missing number.
+  assert.doesNotThrow(() => ok("AGE is na"));
+  assert.doesNotThrow(() => ok("AGE is not na"));
+  assert.doesNotThrow(() => ok("SEX is na"));
+  assert.doesNotThrow(() => ok('SEX is na and AGE >= 75'));
+});

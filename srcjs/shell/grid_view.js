@@ -14,7 +14,7 @@ import {
 } from "@glideapps/glide-data-grid";
 import "@glideapps/glide-data-grid/dist/index.css";
 
-import { cellText } from "../grid_cells.js";
+import { cellText, isMissing, NA_TEXT } from "../grid_cells.js";
 import { headerText } from "../state.js";
 import { whereFromExpr, orderFromSort } from "../sql.js";
 
@@ -198,7 +198,8 @@ function Grid({
         let max = titleWithSort(c, sort, view).length;
         cache.current.forEach((row) => {
           const v = row[c.origIndex];
-          const len = v === null || v === undefined ? 0 : String(v).length;
+          // Missing cells display the NA token, so measure its width, not 0.
+          const len = isMissing(v) ? NA_TEXT.length : String(v).length;
           if (len > max) max = len;
         });
         widths[c.name] = Math.min(420, Math.max(60, max * 8 + 28));
@@ -231,13 +232,16 @@ function Grid({
       if (cached === undefined) {
         return { kind: GridCellKind.Loading, allowOverlay: false };
       }
-      const text = cellText(cached[meta.origIndex]);
+      const raw = cached[meta.origIndex];
+      const text = cellText(raw);
       return {
         kind: GridCellKind.Text,
         data: text,
         displayData: text,
         allowOverlay: false,
         contentAlign: meta.type === "Num" ? "right" : "left",
+        // Render the NA token muted so missing reads as absence, not data.
+        ...(isMissing(raw) ? { themeOverride: { textDark: "#9097a0" } } : {}),
       };
     },
     [visible]
