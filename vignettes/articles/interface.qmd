@@ -75,7 +75,7 @@ and a thin status bar — the SAS Studio layout.
 Use the panel to show or hide columns, navigate a wide dataset, and pick the
 column whose metadata the property pane shows.
 
-![](figures/columns-panel.png)
+![](figures/columns-panel.png){width=313px}
 
 1. **Collapse** — hide the whole rail and widen the grid (a handle reopens it).
 2. **Filter** — type to narrow the list by column name or label; a navigation
@@ -100,7 +100,7 @@ The type chip names each column's storage kind at a glance:
 Selecting a column in the panel fills the property pane with the attributes
 `PROC CONTENTS` reports.
 
-![](figures/property-pane.png)
+![](figures/property-pane.png){width=323px}
 
 | Field | Meaning |
 |---|---|
@@ -150,7 +150,7 @@ read the sort order straight off the headers.
 
 Right-click any column header for a per-column menu.
 
-![](figures/context-menu.png)
+![](figures/context-menu.png){width=269px}
 
 | # | Menu item | Action |
 |:--:|---|---|
@@ -174,7 +174,7 @@ window.
 The funnel in the toolbar opens a free-text box. Type a SAS-style expression; it
 becomes a SQL `WHERE` clause.
 
-![](figures/filter-dialog.png)
+![](figures/filter-dialog.png){width=448px}
 
 1. **Expression** — the filter, here `AGE >= 70 and SEX = "F"`.
 2. **Help** (`?`) — the syntax reference.
@@ -197,7 +197,7 @@ The grammar is small:
 
 A character (or logical) column offers a checklist of its distinct values:
 
-![](figures/add-filter-categorical.png)
+![](figures/add-filter-categorical.png){width=448px}
 
 1. The prompt — select one or more values.
 2. The distinct values, each with a checkbox (plus a **(Missing)** entry when
@@ -206,7 +206,7 @@ A character (or logical) column offers a checklist of its distinct values:
 A numeric column offers comparison operators and a value, with a **+** to add
 more conditions:
 
-![](figures/add-filter-numeric.png)
+![](figures/add-filter-numeric.png){width=448px}
 
 1. The comparison operator (`=`, `≥`, `>`, `≤`, `<`).
 2. The value to compare against.
@@ -215,7 +215,7 @@ more conditions:
 A date, date-time, or time column offers native pickers for equal / less-than /
 greater-than:
 
-![](figures/add-filter-date.png)
+![](figures/add-filter-date.png){width=448px}
 
 1. The criterion (Equal to, Less than, Greater than).
 2. A native date picker — date-time and time columns show the matching native
@@ -246,7 +246,7 @@ Exploration in the grid is convenient, but a report must be reproducible. The
 **Show code** button opens the runnable, air-formatted `dplyr` pipeline that
 reproduces the current view.
 
-![](figures/show-code.png)
+![](figures/show-code.png){width=588px}
 
 1. The pipeline: `filter()`, then `arrange()`, then `select()` — matching the
    filter, sort, and column selection currently in the grid. **Copy** puts it on
