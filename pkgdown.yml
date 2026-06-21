@@ -3,7 +3,8 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   datasetviewer: datasetviewer.html
-last_built: 2026-06-20T11:37Z
+  articles/interface: interface.html
+last_built: 2026-06-21T22:01Z
 urls:
   reference: https://vthanik.github.io/datasetviewer/reference
   article: https://vthanik.github.io/datasetviewer/articles
