@@ -25,6 +25,7 @@
 ^docs$
 ^vignettes/\.quarto$
 ^vignettes/.*_files$
+^vignettes/articles$
 ^LICENSE\.md$
 ^\.gitignore$
 ^cran-comments\.md$

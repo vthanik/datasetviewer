@@ -26,7 +26,7 @@ navbar:
   type: light
   bg: none
   structure:
-    left: [intro, reference, news]
+    left: [intro, reference, articles, news]
     right: [search, github]
 
 home:
