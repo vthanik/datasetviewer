@@ -22,7 +22,11 @@
   required for the package to install, load, check, or run its examples,
   tests, and vignette (those do not exercise the engine). Should
   `checking for ...` flag the `configure` step or an install-time download,
-  this is the reason. The behaviour can be steered with the environment
+  this is the reason. On a build machine with network access the fetch runs
+  and `checking installed package size` may then report ~80 MB; that size is
+  the downloaded engine, never the tarball (which is ~290 KB), and it is
+  absent on any install where the fetch is skipped. The behaviour can be
+  steered with the environment
   variables `DATASETVIEWER_DUCKDB_OFFLINE` (skip the fetch, always use the
   CDN), `DATASETVIEWER_DUCKDB_DIR` (copy from a pre-staged directory for an
   air-gapped install), `DATASETVIEWER_DUCKDB_URL`, and
