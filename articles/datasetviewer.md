@@ -8,9 +8,9 @@ to every scroll and filter. The usual escape hatch — show the first
 find.
 
 `datasetviewer` takes a different route, borrowed from [SAS
-Studio](https://www.sas.com/en_us/software/studio.html)’s table viewer.
-The data is sent to the browser **once**, as Parquet, and queried in
-place with
+Studio](https://www.sas.com/en_us/software/data-and-ai-studio.html)’s
+table viewer. The data is sent to the browser **once**, as Parquet, and
+queried in place with
 [DuckDB-WASM](https://duckdb.org/docs/stable/clients/wasm/overview); the
 grid is drawn on an HTML canvas and only ever materialises the rows you
 can see. Sort, filter, hide a column, jump to the last page — each is a

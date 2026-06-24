@@ -2,7 +2,8 @@
 
 [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
 renders a complete data-exploration surface in one htmlwidget, modelled
-on the [SAS Studio](https://www.sas.com/en_us/software/studio.html)
+on the [SAS
+Studio](https://www.sas.com/en_us/software/data-and-ai-studio.html)
 table viewer: a column-selection panel, a `PROC CONTENTS`-style property
 pane, a names-versus-labels header toggle, header sort, free-text and
 type-aware row filters, a reproducible-code view, and CSV export — every
