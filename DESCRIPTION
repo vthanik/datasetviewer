@@ -2,17 +2,19 @@ Package: datasetviewer
 Title: SAS Studio-Style Interactive Dataset Viewer
 Version: 0.1.0
 Authors@R:
-    person("Vignesh", "Thanikachalam",
-           email = "about.vignesh@gmail.com",
+    person("Vignesh", "Thanikachalam", , "about.vignesh@gmail.com",
            role = c("aut", "cre", "cph"))
 Description: An interactive dataset viewer that renders a fast, scrollable
     grid with a column-selection panel, per-column property metadata, and
     a names-versus-labels header toggle, modelled on the SAS Studio table
     viewer. Runs from one codebase in interactive Shiny apps and in static
-    HTML documents, with a free-text row filter, header sort, and CSV export,
-    and handles large datasets without row sampling by querying them in the
-    browser with 'DuckDB-WASM'.
+    HTML documents, with a free-text row filter, header sort, and CSV
+    export, and handles large datasets without row sampling by querying
+    them in the browser with 'DuckDB-WASM'.
 License: MIT + file LICENSE
+URL: https://github.com/vthanik/datasetviewer,
+    https://vthanik.github.io/datasetviewer/
+BugReports: https://github.com/vthanik/datasetviewer/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
@@ -32,11 +34,6 @@ Suggests:
     testthat (>= 3.0.0),
     tibble,
     withr
-Remotes:
-    vthanik/artoo
-Config/testthat/edition: 3
 VignetteBuilder: quarto
-URL: https://github.com/vthanik/datasetviewer,
-    https://vthanik.github.io/datasetviewer/
-BugReports: https://github.com/vthanik/datasetviewer/issues
+Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
