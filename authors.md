@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/vthanik/datasetviewer/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/vthanik/datasetviewer/blob/v0.1.0/DESCRIPTION)
 
 Thanikachalam V (2026). *datasetviewer: SAS Studio-Style Interactive
 Dataset Viewer*. R package version 0.1.0,
