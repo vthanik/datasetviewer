@@ -1,6 +1,6 @@
-# datasetviewer 0.1.0
+# datasetviewer 0.1.1
 
-* Initial release.
+* Initial CRAN release.
 * `dataset_viewer()` renders a SAS Studio-style interactive grid for a data
   frame, an artoo-conformed frame, or a file path read via
   `artoo::read_dataset()`. The data is sent to the browser as Parquet and
