@@ -24,7 +24,7 @@ dataset_viewer(
   *Dataset to view.* `<data.frame | character(1)>`. A data frame, or a
   file path read via
   [`artoo::read_dataset()`](https://vthanik.github.io/artoo/reference/read_dataset.html)
-  (xpt, Dataset-JSON, NDJSON, Parquet, RDS). An artoo-conformed frame
+  (xpt, Dataset-JSON, NDJSON, 'Parquet', RDS). An artoo-conformed frame
   supplies labels, formats, and lengths to the property panel; a plain
   frame uses synthesized metadata.
 
@@ -55,7 +55,7 @@ dataset_viewer(
 
 ## Details
 
-**Query engine.** The data is sent to the browser once as Parquet and
+**Query engine.** The data is sent to the browser once as 'Parquet' and
 queried in place with DuckDB-WASM, so filter, sort, and paging run over
 the whole dataset with no row sampling. The engine (~35 MB) loads from a
 CDN by default but is fetched into the package at install time when

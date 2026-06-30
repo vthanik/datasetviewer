@@ -11,7 +11,7 @@ apps and in static HTML documents."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">datasetviewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@ apps and in static HTML documents."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>View a dataset in an interactive SAS Studio-style grid</h1>
-      <small class="dont-index">Source: <a href="https://github.com/vthanik/datasetviewer/blob/v0.1.0/R/dataset_viewer.R" class="external-link"><code>R/dataset_viewer.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/vthanik/datasetviewer/blob/main/R/dataset_viewer.R" class="external-link"><code>R/dataset_viewer.R</code></a></small>
       <div class="d-none name"><code>dataset_viewer.Rd</code></div>
     </div>
 
@@ -67,7 +67,7 @@ apps and in static HTML documents.</p>
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p><em>Dataset to view.</em> <code>&lt;data.frame | character(1)&gt;</code>. A data frame, or
 a file path read via <code><a href="https://vthanik.github.io/artoo/reference/read_dataset.html" class="external-link">artoo::read_dataset()</a></code> (xpt, Dataset-JSON, NDJSON,
-Parquet, RDS). An artoo-conformed frame supplies labels, formats, and
+'Parquet', RDS). An artoo-conformed frame supplies labels, formats, and
 lengths to the property panel; a plain frame uses synthesized metadata.</p></dd>
 
 
@@ -97,7 +97,7 @@ Passed through to <code><a href="https://rdrr.io/pkg/htmlwidgets/man/createWidge
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><strong>Query engine.</strong> The data is sent to the browser once as Parquet and queried
+    <p><strong>Query engine.</strong> The data is sent to the browser once as 'Parquet' and queried
 in place with DuckDB-WASM, so filter, sort, and paging run over the whole
 dataset with no row sampling. The engine (~35 MB) loads from a CDN by default
 but is fetched into the package at install time when reachable, so a Shiny app

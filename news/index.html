@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">datasetviewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,12 +34,12 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/vthanik/datasetviewer/blob/v0.1.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/vthanik/datasetviewer/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0" id="datasetviewer-010">datasetviewer 0.1.0<a class="anchor" aria-label="anchor" href="#datasetviewer-010"></a></h2>
-<ul><li>Initial release.</li>
+<h2 class="pkg-version" data-toc-text="0.1.1" id="datasetviewer-011">datasetviewer 0.1.1<a class="anchor" aria-label="anchor" href="#datasetviewer-011"></a></h2>
+<ul><li>Initial CRAN release.</li>
 <li>
 <code><a href="../reference/dataset_viewer.html">dataset_viewer()</a></code> renders a SAS Studio-style interactive grid for a data frame, an artoo-conformed frame, or a file path read via <code><a href="https://vthanik.github.io/artoo/reference/read_dataset.html" class="external-link">artoo::read_dataset()</a></code>. The data is sent to the browser as Parquet and queried in place with DuckDB-WASM, so filter, sort, and scroll stay fast on large datasets without sampling rows.</li>
 <li>The shell provides a column-selection panel with char/num type icons and a collapse chevron (its list can be sorted by original order, name, or type and filtered by name to navigate wide datasets, without changing the grid column order), a property pane (Label, Name, Length, Type, Format), a names-versus-labels header toggle, and click-a-header to sort (the first click selects the column, then clicks cycle ascending, descending, unsorted) – Shift-click adds columns for a multi-column sort, each shown with its direction and priority. A right-click menu sorts per column (Sort Ascending/Descending add the column to the sort; Clear Sorting removes just that column) and offers per-column filters, copying a column or its header, and size-to-content, alongside a free-text row filter and CSV export of the current view.</li>
