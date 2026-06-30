@@ -5,7 +5,7 @@
 #' apps and in static HTML documents.
 #'
 #' @details
-#' **Query engine.** The data is sent to the browser once as Parquet and queried
+#' **Query engine.** The data is sent to the browser once as 'Parquet' and queried
 #' in place with DuckDB-WASM, so filter, sort, and paging run over the whole
 #' dataset with no row sampling. The engine (~35 MB) loads from a CDN by default
 #' but is fetched into the package at install time when reachable, so a Shiny app
@@ -17,7 +17,7 @@
 #'
 #' @param x *Dataset to view.* `<data.frame | character(1)>`. A data frame, or
 #'   a file path read via [artoo::read_dataset()] (xpt, Dataset-JSON, NDJSON,
-#'   Parquet, RDS). An artoo-conformed frame supplies labels, formats, and
+#'   'Parquet', RDS). An artoo-conformed frame supplies labels, formats, and
 #'   lengths to the property panel; a plain frame uses synthesized metadata.
 #' @param ... Reserved for future arguments.
 #' @param view *Initial header mode.* `<character(1)>`. `"names"` (default,

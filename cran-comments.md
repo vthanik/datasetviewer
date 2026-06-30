@@ -1,3 +1,15 @@
+## Resubmission
+
+This is a resubmission (version 0.1.1). In response to the reviewer's
+feedback:
+
+* Single-quoted the software names in the Title and Description
+  ('SAS Studio', 'Shiny', 'DuckDB-WASM').
+
+* The package implements an interactive viewer, not a published statistical
+  method, and implements no published specification, so there is no methods
+  reference to cite in the Description.
+
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
@@ -7,7 +19,7 @@
 
 ## Submission notes
 
-* This is a new submission (datasetviewer 0.1.0), so
+* This is a new submission (datasetviewer 0.1.1), so
   `checking CRAN incoming feasibility` reports a NOTE flagging it as a new
   package with a new maintainer. This is expected for a first release.
 
