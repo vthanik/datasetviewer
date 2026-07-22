@@ -32,3 +32,4 @@
 ^datasetviewer.*\.tar\.gz$
 ^.*\.Rcheck$
 ^\.superpowers$
+^data-raw$

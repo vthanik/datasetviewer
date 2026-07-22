@@ -14,6 +14,8 @@ deliberately no README.Rmd/README.qmd. -->
 
 An interactive, SAS Studio-style dataset viewer for R. `datasetviewer` renders a dataset in a fast, scrollable grid modelled on the SAS Studio table viewer, from one htmlwidget that runs in interactive Shiny apps and in static HTML documents.
 
+<img src="https://github.com/vthanik/datasetviewer/raw/main/data-raw/misc_files/datasetviewer-demo.gif" alt="Animated demo: browsing a CDISC ADSL dataset, selecting columns, switching headers to labels, sorting, filtering rows, viewing column statistics, and showing the dplyr code for the current view" width="100%" />
+
 - **Fast on large data, no sampling.** The data is sent to the browser as Parquet and queried in place with DuckDB-WASM, so filtering, sorting, and scrolling stay responsive on datasets that overwhelm DOM-bound grids or server-paged tables.
 - **SAS Studio layout.** A column-selection panel with char/num type icons and a collapse toggle, a property pane (Label, Name, Length, Type, Format), a names-versus-labels header toggle, click-a-header to sort (Shift-click for multi-column sort), and a free-text “Filter Table Rows” expression.
 - **Clinical metadata.** With the sibling [`artoo`](https://github.com/vthanik/artoo) package installed, column labels, formats, and storage lengths are read from a labelled or CDISC-conformed frame. Plain data frames work with zero `artoo` dependency.
