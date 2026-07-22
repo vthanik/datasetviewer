@@ -1,10 +1,12 @@
-# datasetviewer 0.1.1.9000
+# datasetviewer 0.2.0
 
 * `dataset_viewer()` gains Positron-style column and row pinning from the
   grid context menus.
 * `dataset_viewer()` filter dialog: the value list is now searchable.
 * `dataset_viewer()` shows per-column statistics (completeness, histogram,
   quantiles, top values) in a "Column details" dialog on the header menu.
+* `dataset_viewer()` no longer errors in the browser when every column is
+  unchecked in the columns panel while the grid is drawing.
 
 # datasetviewer 0.1.1
 

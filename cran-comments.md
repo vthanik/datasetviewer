@@ -1,27 +1,16 @@
-## Resubmission
+## Update
 
-This is a resubmission (version 0.1.1). In response to the reviewer's
-feedback:
-
-* Single-quoted the software names in the Title and Description
-  ('SAS Studio', 'Shiny', 'DuckDB-WASM').
-
-* The package implements an interactive viewer, not a published statistical
-  method, and implements no published specification, so there is no methods
-  reference to cite in the Description.
+This is an update (0.1.1 -> 0.2.0). It adds viewer features implemented in
+the bundled JavaScript (column/row pinning, a searchable filter value list,
+a per-column statistics dialog) and fixes a browser-side error when every
+column is deselected while the grid is drawing. The R code, exports, and
+documentation surface are unchanged from 0.1.1.
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
-
-* The note is the expected "New submission" from
-  `checking CRAN incoming feasibility`; see below.
+0 errors | 0 warnings | 0 notes
 
 ## Submission notes
-
-* This is a new submission (datasetviewer 0.1.1), so
-  `checking CRAN incoming feasibility` reports a NOTE flagging it as a new
-  package with a new maintainer. This is expected for a first release.
 
 * The package renders an interactive htmlwidget. The DuckDB-WASM engine
   (~80 MB) is not shipped in the tarball. It is fetched at install time by a
@@ -52,6 +41,9 @@ feedback:
 * Examples and the vignette never auto-print an htmlwidget at the top level
   (which would launch a browser under `R CMD check`); a regression test
   guards this.
+
+* The README references an animated demo image by absolute URL; the image is
+  not shipped in the tarball.
 
 ## Test environments
 

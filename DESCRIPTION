@@ -1,6 +1,6 @@
 Package: datasetviewer
 Title: 'SAS Studio'-Style Interactive Dataset Viewer
-Version: 0.1.1
+Version: 0.2.0
 Authors@R:
     person("Vignesh", "Thanikachalam", , "about.vignesh@gmail.com",
            role = c("aut", "cre", "cph"))
