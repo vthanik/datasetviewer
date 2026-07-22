@@ -255,7 +255,7 @@ HTMLWidgets.widget({
           copyText(headerText(colMeta, store.get().view));
         }
 
-        function cellMenu({ value, rowVals, isMarker }, bounds) {
+        function cellMenu({ value, rowVals, isMarker, rawRow, pinnedIndex }, bounds) {
           // Copy Row only from the row number; Copy (value) only from a cell.
           const items = isMarker
             ? [
@@ -264,6 +264,27 @@ HTMLWidgets.widget({
                   icon: MENU_ICONS.copy,
                   onClick: () => copyText((rowVals || []).join("\t")),
                 },
+                { separator: true },
+                pinnedIndex >= 0
+                  ? {
+                      label: "Unpin Row",
+                      icon: MENU_ICONS.pin,
+                      onClick: () =>
+                        store.set((s) => ({
+                          ...s,
+                          pinnedRows: s.pinnedRows.filter((_, i) => i !== pinnedIndex),
+                        })),
+                    }
+                  : {
+                      label: "Pin Row",
+                      icon: MENU_ICONS.pin,
+                      disabled: !rawRow,
+                      onClick: () =>
+                        store.set((s) => ({
+                          ...s,
+                          pinnedRows: [...(s.pinnedRows || []), rawRow],
+                        })),
+                    },
               ]
             : [
                 {

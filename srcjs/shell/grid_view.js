@@ -128,6 +128,12 @@ function Grid({
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
+  const pinned = snap.pinnedRows || [];
+  const pinnedRef = useRef(pinned);
+  pinnedRef.current = pinned;
+  // ponytail: pinned rows sort first but scroll with content -- Glide 6 has no
+  // top-row freeze (only freezeTrailingRows); revisit if Glide adds one.
+
   const fetchWindow = useCallback(
     (offset, limit) => {
       const { where: w, order: o } = clausesRef.current;
@@ -138,7 +144,8 @@ function Grid({
           const cols = visibleRef.current.length;
           const damage = [];
           for (let r = 0; r < rows.length; r++) {
-            for (let c = 0; c < cols; c++) damage.push({ cell: [c, offset + r] });
+            for (let c = 0; c < cols; c++)
+              damage.push({ cell: [c, offset + r + pinnedRef.current.length] });
           }
           ref.current?.updateCells(damage);
         })
@@ -235,7 +242,24 @@ function Grid({
     (cell) => {
       const [col, row] = cell;
       const meta = visible[col];
-      const cached = cache.current.get(row);
+      const k = pinned.length;
+      if (row < k) {
+        const raw = pinned[row][meta.origIndex];
+        const text = cellText(raw);
+        return {
+          kind: GridCellKind.Text,
+          data: text,
+          displayData: text,
+          allowOverlay: false,
+          contentAlign: meta.type === "Num" ? "right" : "left",
+          // Tinted so a pinned snapshot reads as pinned, not as data order.
+          themeOverride: {
+            bgCell: "#f2f8fd",
+            ...(isMissing(raw) ? { textDark: "#9097a0" } : {}),
+          },
+        };
+      }
+      const cached = cache.current.get(row - k);
       if (cached === undefined) {
         return { kind: GridCellKind.Loading, allowOverlay: false };
       }
@@ -251,14 +275,15 @@ function Grid({
         ...(isMissing(raw) ? { themeOverride: { textDark: "#9097a0" } } : {}),
       };
     },
-    [visible]
+    [visible, pinned]
   );
 
   const onVisibleRegionChanged = useCallback(
     (range) => {
-      if (onRange) onRange(range.y, Math.min(rowCount, range.y + range.height));
-      const start = Math.max(0, range.y - PREFETCH);
-      const end = Math.min(rowCount, range.y + range.height + PREFETCH);
+      const k = pinned.length;
+      if (onRange) onRange(range.y, Math.min(rowCount + k, range.y + range.height));
+      const start = Math.max(0, range.y - k - PREFETCH);
+      const end = Math.min(rowCount, range.y - k + range.height + PREFETCH);
       let first = -1;
       let last = -1;
       for (let r = start; r < end; r++) {
@@ -270,7 +295,7 @@ function Grid({
       if (first === -1) return;
       fetchWindow(first, last - first + 1);
     },
-    [rowCount, onRange, fetchWindow]
+    [rowCount, onRange, fetchWindow, pinned]
   );
 
   const onHeaderContextMenu = useCallback(
@@ -303,9 +328,10 @@ function Grid({
     (cell, event) => {
       if (event.preventDefault) event.preventDefault();
       const [col, row] = cell;
-      const cached = cache.current.get(row);
+      const k = (snap.pinnedRows || []).length;
+      const cached = row < k ? snap.pinnedRows[row] : cache.current.get(row - k);
       if (col < 0) {
-        // Row number (marker): highlight the whole row, offer Copy Row.
+        // Row number (marker): highlight the whole row, offer Copy Row / Pin Row.
         setHlName(null);
         setSelection({
           rows: CompactSelection.fromSingleSelection(row),
@@ -314,13 +340,17 @@ function Grid({
         const rowVals = cached
           ? visible.map((m) => cellText(cached[m.origIndex]))
           : [];
-        if (onCellMenu) onCellMenu({ rowVals, isMarker: true }, event.bounds);
+        if (onCellMenu)
+          onCellMenu(
+            { rowVals, isMarker: true, rawRow: cached || null, pinnedIndex: row < k ? row : -1 },
+            event.bounds
+          );
       } else {
         const value = cached ? cellText(cached[visible[col].origIndex]) : "";
         if (onCellMenu) onCellMenu({ value, isMarker: false }, event.bounds);
       }
     },
-    [visible, onCellMenu]
+    [visible, onCellMenu, snap.pinnedRows]
   );
 
   // When the rows do not fill the viewport, size the grid to its content so the
@@ -330,7 +360,8 @@ function Grid({
   const totalColsWidth =
     visible.reduce((s, c) => s + (colWidths[c.name] || COL_WIDTH), 0) + 60;
   const hOverflow = totalColsWidth > size.width;
-  const contentHeight = HEADER_H + rowCount * ROW_H + (hOverflow ? HSCROLL_PAD : 0);
+  const contentHeight =
+    HEADER_H + (rowCount + pinned.length) * ROW_H + (hOverflow ? HSCROLL_PAD : 0);
   const gridHeight = Math.min(size.height, contentHeight);
 
   // Derive the column highlight from the tracked name so it follows the column
@@ -348,7 +379,7 @@ function Grid({
           theme: GRID_THEME,
           columns: gridColumns,
           freezeColumns: frozenCount,
-          rows: rowCount,
+          rows: rowCount + pinned.length,
           getCellContent,
           onVisibleRegionChanged,
           onHeaderClicked,
