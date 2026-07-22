@@ -16,6 +16,15 @@ function fmt(x) {
   return x.toFixed(2);
 }
 
+// Trim display noise from temporal value strings: sub-second precision and
+// the "+00" zone suffix a TIMETZ VARCHAR cast appends. Summary labels only --
+// grid cells show the engine strings untouched.
+function tidyTemporal(s) {
+  return String(s)
+    .replace(/\.\d+(?=$|\+)/, "")
+    .replace(/\+00(:00)?$/, "");
+}
+
 function pct(part, whole) {
   if (!whole) return "0%";
   const p = (100 * part) / whole;
@@ -29,7 +38,7 @@ function svg(tag, attrs) {
 }
 
 // Valid/missing completeness bar + counts table.
-function validBlock(stats) {
+function validBlock(stats, isTemporal) {
   const wrap = div("dv-stat-valid");
   // viewBox + preserveAspectRatio none: the bar stretches with the panel
   // width (drag-resize) instead of clipping at a fixed pixel width.
@@ -48,7 +57,11 @@ function validBlock(stats) {
     ["Valid", stats.nValid, pct(stats.nValid, stats.nTotal), ACCENT],
     ["Missing", stats.nTotal - stats.nValid, pct(stats.nTotal - stats.nValid, stats.nTotal), MISS],
     ["Unique", stats.nUnique, ""],
-    ["Most common", stats.top[0] ? stats.top[0].v : "", stats.top[0] ? pct(stats.top[0].c, stats.nTotal) : ""],
+    [
+      "Most common",
+      stats.top[0] ? (isTemporal ? tidyTemporal(stats.top[0].v) : stats.top[0].v) : "",
+      stats.top[0] ? pct(stats.top[0].c, stats.nTotal) : "",
+    ],
   ].forEach(([k, v, p, swatch]) => {
     const tr = el("tr");
     const kd = el("td", "dv-stat-k");
@@ -68,7 +81,7 @@ function validBlock(stats) {
 }
 
 // Histogram (numeric/temporal) -- equal-width bins, min/max labels under it.
-function histBlock(stats) {
+function histBlock(stats, isTemporal) {
   const wrap = div("dv-stat-hist");
   const H = 64;
   // Full-width like the completeness bar; bars stretch with the panel.
@@ -87,8 +100,10 @@ function histBlock(stats) {
   });
   wrap.appendChild(g);
   const lab = div("dv-stat-histlab");
-  lab.appendChild(textNode("span", null, stats.minDisp ?? fmt(stats.min)));
-  lab.appendChild(textNode("span", null, stats.maxDisp ?? fmt(stats.max)));
+  const edge = (disp, num) =>
+    disp == null ? fmt(num) : isTemporal ? tidyTemporal(disp) : disp;
+  lab.appendChild(textNode("span", null, edge(stats.minDisp, stats.min)));
+  lab.appendChild(textNode("span", null, edge(stats.maxDisp, stats.max)));
   wrap.appendChild(lab);
   return wrap;
 }
@@ -139,8 +154,9 @@ function renderStats(container, stats, colMeta) {
   uniq.appendChild(textNode("div", "dv-stat-uniq-n", String(stats.nUnique)));
   uniq.appendChild(textNode("div", "dv-stat-uniq-lab", "unique values"));
   container.appendChild(uniq);
-  container.appendChild(validBlock(stats));
-  if (stats.hist) container.appendChild(histBlock(stats));
+  const isTemporal = ["date", "datetime", "time"].includes(colMeta.kind);
+  container.appendChild(validBlock(stats, isTemporal));
+  if (stats.hist) container.appendChild(histBlock(stats, isTemporal));
   if (colMeta.kind === "number") container.appendChild(quantBlock(stats));
   if (
     (colMeta.kind === "string" || colMeta.kind === "bool") &&
