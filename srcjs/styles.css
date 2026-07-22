@@ -255,15 +255,15 @@
   border-bottom: 1px solid var(--dv-rule);
 }
 
-/* Pin indicator for the frozen pinned-row block: a thin accent bar at the
-   grid's left edge, BEFORE the row numbers (Positron-style). */
-.dv-pin-bar {
-  position: absolute;
-  left: 0;
-  width: 3px;
-  background: var(--dv-signal);
-  z-index: 1;
-  pointer-events: none;
+/* Pinned strip: header + pinned rows in a non-scrolling grid above the body.
+   Its scroller only mirrors the body's scrollLeft, so hide its scrollbars,
+   and draw an accent hairline under the strip while any row is pinned. */
+.dv-pin-strip .dvn-scroller {
+  overflow: hidden !important;
+}
+.dv-pin-strip-active {
+  border-bottom: 1px solid #b9d9f2;
+  box-sizing: content-box;
 }
 
 /* Full-width bottom status bar. Also keeps the grid's horizontal scrollbar

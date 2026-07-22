@@ -254,7 +254,10 @@ HTMLWidgets.widget({
             .catch(() => {});
         }
 
-        function cellMenu({ value, rowVals, isMarker, rawRow, pinnedIndex }, bounds) {
+        function cellMenu(
+          { value, rowVals, isMarker, rawRow, rawRowNum, pinnedIndex },
+          bounds
+        ) {
           // Copy Row only from the row number; Copy (value) only from a cell.
           const items = isMarker
             ? [
@@ -281,7 +284,12 @@ HTMLWidgets.widget({
                       onClick: () =>
                         store.set((s) => ({
                           ...s,
-                          pinnedRows: [...(s.pinnedRows || []), rawRow],
+                          // Snapshot the values AND the displayed row number,
+                          // so the pinned strip keeps the number (Positron).
+                          pinnedRows: [
+                            ...(s.pinnedRows || []),
+                            { values: rawRow, num: rawRowNum },
+                          ],
                         })),
                     },
               ]

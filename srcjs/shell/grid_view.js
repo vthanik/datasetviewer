@@ -4,6 +4,17 @@
 // cache. When the filter or sort changes the cache is cleared, the row count
 // recomputed, and the visible window refetched. Scroll cost stays independent
 // of dataset size.
+//
+// Pinned rows follow Positron's data explorer: a frozen strip at the TOP that
+// never scrolls vertically, keeping the row number the row had when pinned.
+// Positron does this inside its own DOM grid by giving pinned rows a
+// scroll-invariant `top`; Glide owns its canvas render loop, so the strip is
+// a SECOND, non-scrolling DataEditor that also owns the column header, while
+// the body DataEditor below renders headerless pure data. The two stay
+// pixel-aligned horizontally by mirroring the body scroller's scrollLeft onto
+// the strip's scroller. Unlike Positron (which drops pins on sort/filter
+// because its pins are row-index references that go stale), pins here are
+// value snapshots, so they stay valid and stay pinned through sort/filter.
 
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -24,7 +35,7 @@ const { useRef, useState, useEffect, useCallback, useMemo } = React;
 // appended, e.g. "AGE ↑1". The single source for the caret -- both the grid
 // column titles and the size-to-content width measure use it, so the displayed
 // header and the width it is sized to can never drift. The caret stays out of
-// headerText(), so Copy Header and the property panel are unaffected.
+// headerText(), so Copy Column and the property panel are unaffected.
 function titleWithSort(c, sort, view) {
   const p = (sort || []).findIndex((s) => s.name === c.name);
   const caret = p === -1 ? "" : ` ${sort[p].dir === "desc" ? "↓" : "↑"}${p + 1}`;
@@ -37,6 +48,7 @@ const FIRST_PAGE = 120;
 const ROW_H = 29;
 const HEADER_H = 34;
 const HSCROLL_PAD = 18; // leave room for the horizontal scrollbar
+const MARKER_W = 60; // body row-marker gutter; the strip's number column matches
 
 // Canvas theme matching the shell stylesheet: the clean SAS Studio interface.
 // Colours read from the live SAS Studio UI (DevTools/CDP): accent #0378cd, text
@@ -90,7 +102,7 @@ function Grid({
   onCellMenu,
   onCount,
 }) {
-  const ref = useRef(null);
+  const ref = useRef(null); // body DataEditor
   const wrapRef = useRef(null);
   const cache = useRef(new Map());
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -128,10 +140,10 @@ function Grid({
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
-  // Pinned snapshots render as the LAST k grid rows, natively frozen at the
-  // bottom via freezeTrailingRows (Glide has no top-row freeze), so they stay
-  // visible while scrolling. Data rows keep their plain 0..rowCount-1 indices.
+  // Pinned snapshots: [{ values, num }] -- the full row's values (by
+  // origIndex) plus the row number it displayed when pinned.
   const pinned = snap.pinnedRows || [];
+  const stripHeight = HEADER_H + pinned.length * ROW_H;
 
   const fetchWindow = useCallback(
     (offset, limit) => {
@@ -204,7 +216,7 @@ function Grid({
       const widths = {};
       const sort = store.get().sort;
       const view = store.get().view;
-      visibleRef.current.forEach((c, ci) => {
+      visibleRef.current.forEach((c) => {
         // Measure the header WITH its sort indicator, or the column sizes too
         // narrow and the arrow + priority get clipped.
         let max = titleWithSort(c, sort, view).length;
@@ -232,17 +244,25 @@ function Grid({
     [visible, snap.view, snap.sort, colWidths]
   );
 
+  // The strip prepends a number "gutter" column sized like the body's row
+  // markers, so the data columns of both grids line up exactly.
+  const stripColumns = useMemo(
+    () => [{ title: "", id: "__dv_pin_gutter__", width: MARKER_W }, ...gridColumns],
+    [gridColumns]
+  );
+
   const onColumnResize = useCallback((column, newSize) => {
+    if (column.id === "__dv_pin_gutter__") return;
     setColWidths((w) => ({ ...w, [column.id]: newSize }));
   }, []);
 
   // Positron-style pin indicator for columns: a thin accent line along the
-  // top edge of the pinned header (rows get a DOM bar over the marker gutter
-  // instead -- drawCell never sees Glide's internal marker column).
+  // top edge of the pinned header. Strip column 0 is the number gutter, so
+  // pinned data columns are strip columns 1..frozenCount.
   const drawHeader = useCallback(
     (args, drawContent) => {
       drawContent();
-      if (args.columnIndex >= 0 && args.columnIndex < frozenCount) {
+      if (args.columnIndex >= 1 && args.columnIndex <= frozenCount) {
         args.ctx.fillStyle = "#0378cd";
         args.ctx.fillRect(args.rect.x, args.rect.y, args.rect.width, 2);
       }
@@ -250,10 +270,20 @@ function Grid({
     [frozenCount]
   );
 
-  // Pinning shifts the trailing grid rows (and reorders columns), so a
-  // selection made before the pin could highlight the wrong place after it --
-  // and a lingering column highlight would read as part of the pin indicator.
-  // Drop both; the thin accent marks are the only pin signal.
+  // Positron-style pin indicator for rows: an accent bar at the left edge of
+  // the number gutter, drawn on the strip's canvas.
+  const drawStripCell = useCallback((args, drawContent) => {
+    drawContent();
+    if (args.col === 0) {
+      args.ctx.fillStyle = "#0378cd";
+      args.ctx.fillRect(args.rect.x, args.rect.y, 3, args.rect.height);
+    }
+  }, []);
+
+  // Pinning reorders columns, so a selection made before the pin could
+  // highlight the wrong place after it -- and a lingering column highlight
+  // would read as part of the pin indicator. Drop it; the thin accent marks
+  // are the only pin signal.
   useEffect(() => {
     setHlName(null);
     setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
@@ -263,9 +293,7 @@ function Grid({
     (cell) => {
       const [col, row] = cell;
       const meta = visible[col];
-      // Trailing rows are the pinned snapshots; everything else is data.
-      const cached =
-        row >= rowCount ? pinned[row - rowCount] : cache.current.get(row);
+      const cached = cache.current.get(row);
       if (cached === undefined) {
         return { kind: GridCellKind.Loading, allowOverlay: false };
       }
@@ -281,13 +309,44 @@ function Grid({
         ...(isMissing(raw) ? { themeOverride: { textDark: "#9097a0" } } : {}),
       };
     },
-    [visible, pinned, rowCount]
+    [visible]
+  );
+
+  // Strip cells: column 0 shows the row number captured at pin time (the
+  // Positron behaviour -- row 8 pinned still reads "8"); the rest read the
+  // snapshot values by origIndex.
+  const getStripCellContent = useCallback(
+    (cell) => {
+      const [col, row] = cell;
+      const pin = pinned[row];
+      if (!pin) return { kind: GridCellKind.Loading, allowOverlay: false };
+      if (col === 0) {
+        return {
+          kind: GridCellKind.Text,
+          data: String(pin.num),
+          displayData: String(pin.num),
+          allowOverlay: false,
+          contentAlign: "center",
+          themeOverride: { textDark: "#768396" },
+        };
+      }
+      const meta = visible[col - 1];
+      const raw = pin.values[meta.origIndex];
+      const text = cellText(raw);
+      return {
+        kind: GridCellKind.Text,
+        data: text,
+        displayData: text,
+        allowOverlay: false,
+        contentAlign: meta.type === "Num" ? "right" : "left",
+        ...(isMissing(raw) ? { themeOverride: { textDark: "#9097a0" } } : {}),
+      };
+    },
+    [pinned, visible]
   );
 
   const onVisibleRegionChanged = useCallback(
     (range) => {
-      // The visible range never includes the frozen trailing block, and data
-      // rows keep plain indices, so no offset math is needed here.
       if (onRange) onRange(range.y, Math.min(rowCount, range.y + range.height));
       const start = Math.max(0, range.y - PREFETCH);
       const end = Math.min(rowCount, range.y + range.height + PREFETCH);
@@ -305,40 +364,45 @@ function Grid({
     [rowCount, onRange, fetchWindow]
   );
 
+  // Header interactions live on the STRIP (it owns the header row). Strip
+  // column 0 is the number gutter; data columns are shifted by one.
   const onHeaderContextMenu = useCallback(
     (colIndex, event) => {
       if (event.preventDefault) event.preventDefault();
+      const meta = visible[colIndex - 1];
+      if (!meta) return;
       // Highlight the whole column (by name; see hlName).
-      setHlName(visible[colIndex].name);
+      setHlName(meta.name);
       setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
-      if (onHeaderMenu) onHeaderMenu(visible[colIndex], event.bounds);
+      if (onHeaderMenu) onHeaderMenu(meta, event.bounds);
     },
     [visible, onHeaderMenu]
   );
 
   const onHeaderClicked = useCallback(
     (colIndex, event) => {
-      // Ignore the row-marker gutter; suppress Glide's own header selection so a
+      // Ignore the number gutter; suppress Glide's own header selection so a
       // Shift-click only extends the sort, not a column range highlight. Then
       // highlight just the clicked column so the plain-click "neutral" step
       // reads as selected (highlighted) even before any sort arrow appears.
-      if (colIndex < 0 || !visible[colIndex]) return;
+      const meta = visible[colIndex - 1];
+      if (!meta) return;
       if (event && event.preventDefault) event.preventDefault();
-      setHlName(visible[colIndex].name);
+      setHlName(meta.name);
       setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
-      if (onSort) onSort(visible[colIndex].name, !!(event && event.shiftKey));
+      if (onSort) onSort(meta.name, !!(event && event.shiftKey));
     },
     [visible, onSort]
   );
 
+  // Body context menu: markers offer Copy Row / Pin Row (with the displayed
+  // row number captured for the pin), cells offer Copy.
   const onCellContextMenu = useCallback(
     (cell, event) => {
       if (event.preventDefault) event.preventDefault();
       const [col, row] = cell;
-      const pins = snap.pinnedRows || [];
-      const cached = row >= rowCount ? pins[row - rowCount] : cache.current.get(row);
+      const cached = cache.current.get(row);
       if (col < 0) {
-        // Row number (marker): highlight the whole row, offer Copy Row / Pin Row.
         setHlName(null);
         setSelection({
           rows: CompactSelection.fromSingleSelection(row),
@@ -353,7 +417,8 @@ function Grid({
               rowVals,
               isMarker: true,
               rawRow: cached || null,
-              pinnedIndex: row >= rowCount ? row - rowCount : -1,
+              rawRowNum: row + 1,
+              pinnedIndex: -1,
             },
             event.bounds
           );
@@ -362,19 +427,59 @@ function Grid({
         if (onCellMenu) onCellMenu({ value, isMarker: false }, event.bounds);
       }
     },
-    [visible, onCellMenu, snap.pinnedRows, rowCount]
+    [visible, onCellMenu]
   );
+
+  // Strip context menu: any pinned cell offers the row menu with Unpin (the
+  // gutter acts as the marker); data cells also offer Copy.
+  const onStripCellContextMenu = useCallback(
+    (cell, event) => {
+      if (event.preventDefault) event.preventDefault();
+      const [col, row] = cell;
+      const pin = pinned[row];
+      if (!pin) return;
+      if (col <= 0) {
+        const rowVals = visible.map((m) => cellText(pin.values[m.origIndex]));
+        if (onCellMenu)
+          onCellMenu(
+            { rowVals, isMarker: true, rawRow: pin.values, pinnedIndex: row },
+            event.bounds
+          );
+      } else {
+        const value = cellText(pin.values[visible[col - 1].origIndex]);
+        if (onCellMenu) onCellMenu({ value, isMarker: false }, event.bounds);
+      }
+    },
+    [pinned, visible, onCellMenu]
+  );
+
+  // Mirror the body's horizontal scroll onto the strip so the two canvases
+  // stay pixel-aligned. Runs every render (cheap) so it survives remounts and
+  // column-width changes; the strip's own scrollbars are hidden in CSS.
+  useEffect(() => {
+    const scrollers = wrapRef.current?.querySelectorAll(".dvn-scroller");
+    if (!scrollers || scrollers.length < 2) return undefined;
+    const strip = scrollers[0];
+    const body = scrollers[1];
+    const sync = () => {
+      strip.scrollLeft = body.scrollLeft;
+    };
+    body.addEventListener("scroll", sync, { passive: true });
+    sync();
+    return () => body.removeEventListener("scroll", sync);
+  });
 
   // When the rows do not fill the viewport, size the grid to its content so the
   // area below the last row is blank (no trailing empty grid lines), matching
   // SAS Studio. When they overflow, fill the container and scroll. Only reserve
   // room for the horizontal scrollbar when the columns actually overflow.
   const totalColsWidth =
-    visible.reduce((s, c) => s + (colWidths[c.name] || COL_WIDTH), 0) + 60;
+    visible.reduce((s, c) => s + (colWidths[c.name] || COL_WIDTH), 0) + MARKER_W;
   const hOverflow = totalColsWidth > size.width;
   const contentHeight =
-    HEADER_H + (rowCount + pinned.length) * ROW_H + (hOverflow ? HSCROLL_PAD : 0);
+    stripHeight + rowCount * ROW_H + (hOverflow ? HSCROLL_PAD : 0);
   const gridHeight = Math.min(size.height, contentHeight);
+  const bodyHeight = Math.max(0, gridHeight - stripHeight);
 
   // Derive the column highlight from the tracked name so it follows the column
   // across hide/show; fall back to Glide's own column selection when none.
@@ -383,59 +488,71 @@ function Grid({
     hlIdx >= 0
       ? { ...selection, columns: CompactSelection.fromSingleSelection(hlIdx) }
       : selection;
+  // The strip mirrors the column highlight (shifted past its gutter) so the
+  // header -- which lives on the strip -- shows the selected state.
+  const stripSelection = {
+    rows: CompactSelection.empty(),
+    columns:
+      hlIdx >= 0 ? CompactSelection.fromSingleSelection(hlIdx + 1) : CompactSelection.empty(),
+  };
 
-  const editor =
-    size.width > 0 && size.height > 0
-      ? React.createElement(DataEditor, {
-          ref,
-          theme: GRID_THEME,
-          columns: gridColumns,
-          freezeColumns: frozenCount,
-          rows: rowCount + pinned.length,
-          getCellContent,
-          freezeTrailingRows: pinned.length,
-          drawHeader,
-          onVisibleRegionChanged,
-          onHeaderClicked,
-          onHeaderContextMenu,
-          onCellContextMenu,
-          onColumnResize,
-          rowMarkers: "clickable-number", // row numbers; click one to select the row
-          rowHeight: ROW_H,
-          headerHeight: HEADER_H,
-          gridSelection,
-          onGridSelectionChange: (sel) => {
-            // A body interaction (cell/row) drops the header highlight.
-            setHlName(null);
-            setSelection(sel);
-          },
-          rowSelect: "single", // one row at a time, no multi-select
-          rowSelectionMode: "single",
-          smoothScrollX: true,
-          smoothScrollY: true,
-          width: size.width,
-          height: gridHeight,
-        })
-      : null;
+  const ready = size.width > 0 && size.height > 0;
 
-  // Accent bar over the marker gutter of the frozen pinned block (before the
-  // row numbers, Positron-style). When the grid fills the viewport the frozen
-  // block touches the bottom edge; only when the content fits does it sit
-  // above the strip we reserve for the horizontal scrollbar.
-  // ponytail: assumes overlay scrollbars (macOS); classic scrollbars would
-  // shift the fill case by their height -- measure the canvas if that bites.
-  const pinBarBottom =
-    gridHeight < contentHeight ? 0 : hOverflow ? HSCROLL_PAD : 0;
-  const pinBar =
-    pinned.length > 0
-      ? React.createElement("div", {
-          className: "dv-pin-bar",
-          style: {
-            height: `${pinned.length * ROW_H}px`,
-            bottom: `${pinBarBottom}px`,
-          },
-        })
-      : null;
+  // Non-scrolling strip: column header + pinned rows, frozen by construction
+  // (its height exactly fits its rows, so it has nothing to scroll).
+  const strip = ready
+    ? React.createElement(DataEditor, {
+        theme: GRID_THEME,
+        columns: stripColumns,
+        freezeColumns: 1 + frozenCount,
+        rows: pinned.length,
+        getCellContent: getStripCellContent,
+        drawHeader,
+        drawCell: drawStripCell,
+        onHeaderClicked,
+        onHeaderContextMenu,
+        onCellContextMenu: onStripCellContextMenu,
+        onColumnResize,
+        rowMarkers: "none",
+        rowHeight: ROW_H,
+        headerHeight: HEADER_H,
+        gridSelection: stripSelection,
+        onGridSelectionChange: () => {},
+        smoothScrollX: true,
+        width: size.width,
+        height: stripHeight,
+      })
+    : null;
+
+  // Headerless body: pure data rows, the single vertical scroll owner.
+  const editor = ready
+    ? React.createElement(DataEditor, {
+        ref,
+        theme: GRID_THEME,
+        columns: gridColumns,
+        freezeColumns: frozenCount,
+        rows: rowCount,
+        getCellContent,
+        onVisibleRegionChanged,
+        onCellContextMenu,
+        rowMarkers: "clickable-number", // row numbers; click one to select the row
+        rowMarkerWidth: MARKER_W,
+        rowHeight: ROW_H,
+        headerHeight: 0,
+        gridSelection,
+        onGridSelectionChange: (sel) => {
+          // A body interaction (cell/row) drops the header highlight.
+          setHlName(null);
+          setSelection(sel);
+        },
+        rowSelect: "single", // one row at a time, no multi-select
+        rowSelectionMode: "single",
+        smoothScrollX: true,
+        smoothScrollY: true,
+        width: size.width,
+        height: bodyHeight,
+      })
+    : null;
 
   // Inner wrapper sized to the grid; its bottom border draws the rule under
   // the last row (Glide only draws separators between rows, not below the last).
@@ -445,8 +562,16 @@ function Grid({
     React.createElement(
       "div",
       { className: "dv-grid-inner", style: { height: `${gridHeight}px` } },
-      editor,
-      pinBar
+      React.createElement(
+        "div",
+        {
+          className:
+            "dv-pin-strip" + (pinned.length ? " dv-pin-strip-active" : ""),
+          style: { height: `${stripHeight}px` },
+        },
+        strip
+      ),
+      editor
     )
   );
 }
