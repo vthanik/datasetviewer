@@ -59,15 +59,39 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
-      - name: Deploy to GitHub pages 🚀
+      # With `development: mode: auto`, a dev version (X.Y.Z.9000) builds a
+      # dev-only site under docs/dev/ -- a full-replace deploy of that would
+      # wipe the release site at the gh-pages root (it did, 2026-07-22). So:
+      # dev builds deploy docs/dev into dev/ (clean scoped to dev/), release
+      # builds deploy docs/ to the root (clean, but preserving dev/).
+      - name: Detect dev-only build
         if: github.event_name != 'pull_request'
+        id: site
+        run: |
+          if [ -d docs/dev ] && [ ! -f docs/index.html ]; then
+            echo "dev=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dev=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy dev site to gh-pages /dev 🚀
+        if: github.event_name != 'pull_request' && steps.site.outputs.dev == 'true'
         uses: JamesIves/github-pages-deploy-action@v4.5.0
         with:
-          # Full replace: the site is regenerated in docs/ on every build, so
-          # nothing on gh-pages should persist across builds. clean: false left
-          # renamed or removed pages orphaned (e.g. a renamed vignette's stale
-          # HTML lingering, unlinked). build_site_github_pages() writes its own
-          # .nojekyll into docs/, and there is no CNAME to preserve.
           clean: true
+          branch: gh-pages
+          folder: docs/dev
+          target-folder: dev
+
+      - name: Deploy release site to gh-pages root 🚀
+        if: github.event_name != 'pull_request' && steps.site.outputs.dev == 'false'
+        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        with:
+          # Full replace of the root: the site is regenerated in docs/ on
+          # every build, so nothing at root should persist (clean: false left
+          # renamed pages orphaned). dev/ is the one exception -- it is
+          # written by the dev deploy above, never by a release build.
+          clean: true
+          clean-exclude: dev
           branch: gh-pages
           folder: docs
