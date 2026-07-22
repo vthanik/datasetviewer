@@ -454,20 +454,25 @@ function Grid({
   );
 
   // Mirror the body's horizontal scroll onto the strip so the two canvases
-  // stay pixel-aligned. Runs every render (cheap) so it survives remounts and
-  // column-width changes; the strip's own scrollbars are hidden in CSS.
+  // stay pixel-aligned. Reconciled every animation frame rather than on
+  // scroll events: momentum scrolling fires events faster than a listener
+  // chain re-renders, so an event-driven mirror visibly lags (and a missed
+  // final event would leave the strip stuck misaligned). The per-frame
+  // comparison is one property read when nothing changed.
   useEffect(() => {
-    const scrollers = wrapRef.current?.querySelectorAll(".dvn-scroller");
-    if (!scrollers || scrollers.length < 2) return undefined;
-    const strip = scrollers[0];
-    const body = scrollers[1];
-    const sync = () => {
-      strip.scrollLeft = body.scrollLeft;
+    let raf = 0;
+    const tick = () => {
+      const scrollers = wrapRef.current?.querySelectorAll(".dvn-scroller");
+      if (scrollers && scrollers.length >= 2) {
+        const strip = scrollers[0];
+        const body = scrollers[1];
+        if (strip.scrollLeft !== body.scrollLeft) strip.scrollLeft = body.scrollLeft;
+      }
+      raf = requestAnimationFrame(tick);
     };
-    body.addEventListener("scroll", sync, { passive: true });
-    sync();
-    return () => body.removeEventListener("scroll", sync);
-  });
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // When the rows do not fill the viewport, size the grid to its content so the
   // area below the last row is blank (no trailing empty grid lines), matching
