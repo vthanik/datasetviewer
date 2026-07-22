@@ -307,7 +307,9 @@ function Grid({
       const [col, row] = cell;
       const meta = visible[col];
       const cached = cache.current.get(row);
-      if (cached === undefined) {
+      // Glide's canvas draw is async: after a column shrink (e.g. Select all
+      // unchecked) a queued draw can still ask for stale coordinates.
+      if (meta === undefined || cached === undefined) {
         return { kind: GridCellKind.Loading, allowOverlay: false };
       }
       const raw = cached[meta.origIndex];
@@ -344,6 +346,9 @@ function Grid({
         };
       }
       const meta = visible[col - 1];
+      if (meta === undefined) {
+        return { kind: GridCellKind.Loading, allowOverlay: false };
+      }
       const raw = pin.values[meta.origIndex];
       const text = cellText(raw);
       return {
@@ -436,7 +441,8 @@ function Grid({
             event.bounds
           );
       } else {
-        const value = cached ? cellText(cached[visible[col].origIndex]) : "";
+        const meta = visible[col];
+        const value = cached && meta ? cellText(cached[meta.origIndex]) : "";
         if (onCellMenu) onCellMenu({ value, isMarker: false }, event.bounds);
       }
     },
@@ -459,7 +465,8 @@ function Grid({
             event.bounds
           );
       } else {
-        const value = cellText(pin.values[visible[col - 1].origIndex]);
+        const meta = visible[col - 1];
+        const value = meta ? cellText(pin.values[meta.origIndex]) : "";
         if (onCellMenu) onCellMenu({ value, isMarker: false }, event.bounds);
       }
     },
