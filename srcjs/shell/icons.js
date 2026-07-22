@@ -67,4 +67,6 @@ export const MENU_ICONS = {
   restoreWidths: M(`<path d="M4 8 A4.5 4.5 0 1 1 5.2 11.2"/><path d="M4 4.8 V8 H7.2"/>`),
   // Checkmark: marks the active option in the columns Sort menu.
   check: M(`<path d="M3.5 8.5 L6.5 11.5 L12.5 4.5"/>`),
+  // Pin/unpin column for the header context menu.
+  pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 7 3 3H7l3-3z"/><line x1="12" y1="14" x2="12" y2="21"/></svg>',
 };

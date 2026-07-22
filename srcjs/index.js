@@ -293,6 +293,26 @@ HTMLWidgets.widget({
               onClick: () => copyHeader(colMeta),
             },
             { separator: true },
+            (store.get().pinnedCols || []).includes(colMeta.name)
+              ? {
+                  label: "Unpin Column",
+                  icon: MENU_ICONS.pin,
+                  onClick: () =>
+                    store.set((s) => ({
+                      ...s,
+                      pinnedCols: s.pinnedCols.filter((n) => n !== colMeta.name),
+                    })),
+                }
+              : {
+                  label: "Pin Column",
+                  icon: MENU_ICONS.pin,
+                  onClick: () =>
+                    store.set((s) => ({
+                      ...s,
+                      pinnedCols: [...(s.pinnedCols || []), colMeta.name],
+                    })),
+                },
+            { separator: true },
             {
               label: "Sort Ascending",
               icon: MENU_ICONS.sortAsc,

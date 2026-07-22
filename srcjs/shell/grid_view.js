@@ -15,7 +15,7 @@ import {
 import "@glideapps/glide-data-grid/dist/index.css";
 
 import { cellText, isMissing, NA_TEXT } from "../grid_cells.js";
-import { headerText } from "../state.js";
+import { headerText, presentedColumns } from "../state.js";
 import { whereFromExpr, orderFromSort } from "../sql.js";
 
 const { useRef, useState, useEffect, useCallback, useMemo } = React;
@@ -115,9 +115,16 @@ function Grid({
   clausesRef.current = { where, order };
 
   const visible = useMemo(
-    () => snap.columns.filter((c) => c.selected),
-    [snap.columns]
+    () => presentedColumns(snap.columns, snap.pinnedCols || []),
+    [snap.columns, snap.pinnedCols]
   );
+
+  // Frozen = pinned AND currently shown (hidden pinned columns do not count).
+  const frozenCount = useMemo(
+    () => (snap.pinnedCols || []).filter((n) => visible.some((c) => c.name === n)).length,
+    [snap.pinnedCols, visible]
+  );
+
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
@@ -340,6 +347,7 @@ function Grid({
           ref,
           theme: GRID_THEME,
           columns: gridColumns,
+          freezeColumns: frozenCount,
           rows: rowCount,
           getCellContent,
           onVisibleRegionChanged,
