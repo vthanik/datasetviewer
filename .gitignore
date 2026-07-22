@@ -52,3 +52,4 @@ tests/testthat/testthat-problems.rds
 
 # macOS
 .DS_Store
+.superpowers/

@@ -31,3 +31,4 @@
 ^cran-comments\.md$
 ^datasetviewer.*\.tar\.gz$
 ^.*\.Rcheck$
+^\.superpowers$
