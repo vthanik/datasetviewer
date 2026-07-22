@@ -249,9 +249,21 @@
 
 /* Hugs the grid; its bottom border is the rule under the last row. */
 .dv-grid-inner {
+  position: relative; /* anchors .dv-pin-bar over the marker gutter */
   width: 100%;
   box-sizing: content-box;
   border-bottom: 1px solid var(--dv-rule);
+}
+
+/* Pin indicator for the frozen pinned-row block: a thin accent bar at the
+   grid's left edge, BEFORE the row numbers (Positron-style). */
+.dv-pin-bar {
+  position: absolute;
+  left: 0;
+  width: 3px;
+  background: var(--dv-signal);
+  z-index: 1;
+  pointer-events: none;
 }
 
 /* Full-width bottom status bar. Also keeps the grid's horizontal scrollbar

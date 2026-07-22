@@ -236,20 +236,9 @@ function Grid({
     setColWidths((w) => ({ ...w, [column.id]: newSize }));
   }, []);
 
-  // Positron-style pin indicators: a thin accent bar instead of a full-row /
-  // full-column highlight. Pinned rows get it on the left edge of the first
-  // cell; pinned column headers get it along their top edge.
-  const drawCell = useCallback(
-    (args, drawContent) => {
-      drawContent();
-      if (args.col === 0 && args.row >= rowCount) {
-        args.ctx.fillStyle = "#0378cd";
-        args.ctx.fillRect(args.rect.x, args.rect.y, 3, args.rect.height);
-      }
-    },
-    [rowCount]
-  );
-
+  // Positron-style pin indicator for columns: a thin accent line along the
+  // top edge of the pinned header (rows get a DOM bar over the marker gutter
+  // instead -- drawCell never sees Glide's internal marker column).
   const drawHeader = useCallback(
     (args, drawContent) => {
       drawContent();
@@ -405,7 +394,6 @@ function Grid({
           rows: rowCount + pinned.length,
           getCellContent,
           freezeTrailingRows: pinned.length,
-          drawCell,
           drawHeader,
           onVisibleRegionChanged,
           onHeaderClicked,
@@ -430,6 +418,25 @@ function Grid({
         })
       : null;
 
+  // Accent bar over the marker gutter of the frozen pinned block (before the
+  // row numbers, Positron-style). When the grid fills the viewport the frozen
+  // block touches the bottom edge; only when the content fits does it sit
+  // above the strip we reserve for the horizontal scrollbar.
+  // ponytail: assumes overlay scrollbars (macOS); classic scrollbars would
+  // shift the fill case by their height -- measure the canvas if that bites.
+  const pinBarBottom =
+    gridHeight < contentHeight ? 0 : hOverflow ? HSCROLL_PAD : 0;
+  const pinBar =
+    pinned.length > 0
+      ? React.createElement("div", {
+          className: "dv-pin-bar",
+          style: {
+            height: `${pinned.length * ROW_H}px`,
+            bottom: `${pinBarBottom}px`,
+          },
+        })
+      : null;
+
   // Inner wrapper sized to the grid; its bottom border draws the rule under
   // the last row (Glide only draws separators between rows, not below the last).
   return React.createElement(
@@ -438,7 +445,8 @@ function Grid({
     React.createElement(
       "div",
       { className: "dv-grid-inner", style: { height: `${gridHeight}px` } },
-      editor
+      editor,
+      pinBar
     )
   );
 }
