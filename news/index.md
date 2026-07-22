@@ -2,6 +2,8 @@
 
 ## datasetviewer 0.1.1
 
+CRAN release: 2026-07-09
+
 - Initial CRAN release.
 - [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
   renders a SAS Studio-style interactive grid for a data frame, an
