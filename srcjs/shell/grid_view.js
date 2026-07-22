@@ -128,11 +128,10 @@ function Grid({
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
+  // Pinned snapshots render as the LAST k grid rows, natively frozen at the
+  // bottom via freezeTrailingRows (Glide has no top-row freeze), so they stay
+  // visible while scrolling. Data rows keep their plain 0..rowCount-1 indices.
   const pinned = snap.pinnedRows || [];
-  const pinnedRef = useRef(pinned);
-  pinnedRef.current = pinned;
-  // ponytail: pinned rows sort first but scroll with content -- Glide 6 has no
-  // top-row freeze (only freezeTrailingRows); revisit if Glide adds one.
 
   const fetchWindow = useCallback(
     (offset, limit) => {
@@ -144,8 +143,7 @@ function Grid({
           const cols = visibleRef.current.length;
           const damage = [];
           for (let r = 0; r < rows.length; r++) {
-            for (let c = 0; c < cols; c++)
-              damage.push({ cell: [c, offset + r + pinnedRef.current.length] });
+            for (let c = 0; c < cols; c++) damage.push({ cell: [c, offset + r] });
           }
           ref.current?.updateCells(damage);
         })
@@ -193,14 +191,7 @@ function Grid({
 
   useEffect(() => {
     if (!scrollApi) return undefined;
-    // Callers pass DATA-row indices; shift past the pinned block, except for
-    // row 0 where the true top (pins included) is what "First" should show.
-    scrollApi.scrollToRow = (row) =>
-      ref.current?.scrollTo(
-        0,
-        row === 0 ? 0 : row + pinnedRef.current.length,
-        "vertical"
-      );
+    scrollApi.scrollToRow = (row) => ref.current?.scrollTo(0, row, "vertical");
     return () => {
       scrollApi.scrollToRow = undefined;
     };
@@ -245,46 +236,47 @@ function Grid({
     setColWidths((w) => ({ ...w, [column.id]: newSize }));
   }, []);
 
-  // Whole-row tint + separator hue for pinned snapshots, so a pin reads as a
-  // pinned block, not as the data reordering itself.
-  const getRowThemeOverride = useCallback(
-    (row) =>
-      row < pinned.length
-        ? {
-            bgCell: "#eaf4fc",
-            bgCellMedium: "#eaf4fc",
-            horizontalBorderColor: "#b9d9f2",
-          }
-        : undefined,
-    [pinned.length]
+  // Positron-style pin indicators: a thin accent bar instead of a full-row /
+  // full-column highlight. Pinned rows get it on the left edge of the first
+  // cell; pinned column headers get it along their top edge.
+  const drawCell = useCallback(
+    (args, drawContent) => {
+      drawContent();
+      if (args.col === 0 && args.row >= rowCount) {
+        args.ctx.fillStyle = "#0378cd";
+        args.ctx.fillRect(args.rect.x, args.rect.y, 3, args.rect.height);
+      }
+    },
+    [rowCount]
   );
 
-  // Pinning shifts every grid row index, so a selection made before the pin
-  // would highlight a different row after it; drop it instead of lying.
+  const drawHeader = useCallback(
+    (args, drawContent) => {
+      drawContent();
+      if (args.columnIndex >= 0 && args.columnIndex < frozenCount) {
+        args.ctx.fillStyle = "#0378cd";
+        args.ctx.fillRect(args.rect.x, args.rect.y, args.rect.width, 2);
+      }
+    },
+    [frozenCount]
+  );
+
+  // Pinning shifts the trailing grid rows (and reorders columns), so a
+  // selection made before the pin could highlight the wrong place after it --
+  // and a lingering column highlight would read as part of the pin indicator.
+  // Drop both; the thin accent marks are the only pin signal.
   useEffect(() => {
     setHlName(null);
     setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
-  }, [pinned.length]);
+  }, [pinned.length, snap.pinnedCols]);
 
   const getCellContent = useCallback(
     (cell) => {
       const [col, row] = cell;
       const meta = visible[col];
-      const k = pinned.length;
-      if (row < k) {
-        const raw = pinned[row][meta.origIndex];
-        const text = cellText(raw);
-        return {
-          kind: GridCellKind.Text,
-          data: text,
-          displayData: text,
-          allowOverlay: false,
-          contentAlign: meta.type === "Num" ? "right" : "left",
-          // Row-level tint comes from getRowThemeOverride; only NA muting here.
-          ...(isMissing(raw) ? { themeOverride: { textDark: "#9097a0" } } : {}),
-        };
-      }
-      const cached = cache.current.get(row - k);
+      // Trailing rows are the pinned snapshots; everything else is data.
+      const cached =
+        row >= rowCount ? pinned[row - rowCount] : cache.current.get(row);
       if (cached === undefined) {
         return { kind: GridCellKind.Loading, allowOverlay: false };
       }
@@ -300,21 +292,16 @@ function Grid({
         ...(isMissing(raw) ? { themeOverride: { textDark: "#9097a0" } } : {}),
       };
     },
-    [visible, pinned]
+    [visible, pinned, rowCount]
   );
 
   const onVisibleRegionChanged = useCallback(
     (range) => {
-      const k = pinned.length;
-      // Report the visible DATA-row window (pinned snapshots excluded), so the
-      // toolbar's "Rows a-b of n" stays consistent with the data row count.
-      if (onRange)
-        onRange(
-          Math.max(0, range.y - k),
-          Math.max(0, Math.min(rowCount, range.y + range.height - k))
-        );
-      const start = Math.max(0, range.y - k - PREFETCH);
-      const end = Math.min(rowCount, range.y - k + range.height + PREFETCH);
+      // The visible range never includes the frozen trailing block, and data
+      // rows keep plain indices, so no offset math is needed here.
+      if (onRange) onRange(range.y, Math.min(rowCount, range.y + range.height));
+      const start = Math.max(0, range.y - PREFETCH);
+      const end = Math.min(rowCount, range.y + range.height + PREFETCH);
       let first = -1;
       let last = -1;
       for (let r = start; r < end; r++) {
@@ -326,7 +313,7 @@ function Grid({
       if (first === -1) return;
       fetchWindow(first, last - first + 1);
     },
-    [rowCount, onRange, fetchWindow, pinned]
+    [rowCount, onRange, fetchWindow]
   );
 
   const onHeaderContextMenu = useCallback(
@@ -359,8 +346,8 @@ function Grid({
     (cell, event) => {
       if (event.preventDefault) event.preventDefault();
       const [col, row] = cell;
-      const k = (snap.pinnedRows || []).length;
-      const cached = row < k ? snap.pinnedRows[row] : cache.current.get(row - k);
+      const pins = snap.pinnedRows || [];
+      const cached = row >= rowCount ? pins[row - rowCount] : cache.current.get(row);
       if (col < 0) {
         // Row number (marker): highlight the whole row, offer Copy Row / Pin Row.
         setHlName(null);
@@ -373,7 +360,12 @@ function Grid({
           : [];
         if (onCellMenu)
           onCellMenu(
-            { rowVals, isMarker: true, rawRow: cached || null, pinnedIndex: row < k ? row : -1 },
+            {
+              rowVals,
+              isMarker: true,
+              rawRow: cached || null,
+              pinnedIndex: row >= rowCount ? row - rowCount : -1,
+            },
             event.bounds
           );
       } else {
@@ -381,7 +373,7 @@ function Grid({
         if (onCellMenu) onCellMenu({ value, isMarker: false }, event.bounds);
       }
     },
-    [visible, onCellMenu, snap.pinnedRows]
+    [visible, onCellMenu, snap.pinnedRows, rowCount]
   );
 
   // When the rows do not fill the viewport, size the grid to its content so the
@@ -412,7 +404,9 @@ function Grid({
           freezeColumns: frozenCount,
           rows: rowCount + pinned.length,
           getCellContent,
-          getRowThemeOverride,
+          freezeTrailingRows: pinned.length,
+          drawCell,
+          drawHeader,
           onVisibleRegionChanged,
           onHeaderClicked,
           onHeaderContextMenu,

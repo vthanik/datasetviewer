@@ -254,10 +254,6 @@ HTMLWidgets.widget({
             .catch(() => {});
         }
 
-        function copyHeader(colMeta) {
-          copyText(headerText(colMeta, store.get().view));
-        }
-
         function cellMenu({ value, rowVals, isMarker, rawRow, pinnedIndex }, bounds) {
           // Copy Row only from the row number; Copy (value) only from a cell.
           const items = isMarker
@@ -310,11 +306,6 @@ HTMLWidgets.widget({
               label: "Copy Column",
               icon: MENU_ICONS.copy,
               onClick: () => copyColumn(colMeta),
-            },
-            {
-              label: "Copy Header",
-              icon: MENU_ICONS.copy,
-              onClick: () => copyHeader(colMeta),
             },
             { separator: true },
             (store.get().pinnedCols || []).includes(colMeta.name)
