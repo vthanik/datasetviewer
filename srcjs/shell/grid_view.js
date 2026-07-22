@@ -268,8 +268,12 @@ function Grid({
     (args, drawContent) => {
       drawContent();
       if (args.columnIndex >= 1 && args.columnIndex <= frozenCount) {
+        // save/restore: Glide batches draws assuming ctx state it set is
+        // still current -- a leaked fillStyle would tint later text runs.
+        args.ctx.save();
         args.ctx.fillStyle = "#0378cd";
         args.ctx.fillRect(args.rect.x, args.rect.y, args.rect.width, 2);
+        args.ctx.restore();
       }
     },
     [frozenCount]
@@ -280,8 +284,12 @@ function Grid({
   const drawStripCell = useCallback((args, drawContent) => {
     drawContent();
     if (args.col === 0) {
+      // save/restore: see drawHeader -- a leaked fillStyle turns the NEXT
+      // row's gutter number accent-blue.
+      args.ctx.save();
       args.ctx.fillStyle = "#0378cd";
       args.ctx.fillRect(args.rect.x, args.rect.y, 3, args.rect.height);
+      args.ctx.restore();
     }
   }, []);
 
