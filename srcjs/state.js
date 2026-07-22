@@ -39,6 +39,8 @@ export function initialState(payload) {
     activeColumn: 0, // column shown in the property panel
     filterExpr: "", // free-text SAS-style filter expression
     sort: [], // [{ name, dir }]
+    pinnedCols: [], // column NAMES pinned (frozen) to the left, in pin order
+    pinnedRows: [], // full-row value snapshots pinned to the top of the grid
   };
 }
 
@@ -76,4 +78,15 @@ export function columnSortOrder(columns, mode, view) {
     "type-desc": (a, b) => rank(b) - rank(a) || byName(a, b),
   }[mode];
   return cmp ? order.sort(cmp) : order;
+}
+
+// Columns as the grid presents them: selected only, pinned first (in pin
+// order), then the rest in their original order. A pinned-but-hidden column
+// simply does not show; re-showing it restores the pin. Pure -- no DOM.
+export function presentedColumns(columns, pinnedCols) {
+  const sel = columns.filter((c) => c.selected);
+  const pinned = pinnedCols
+    .map((n) => sel.find((c) => c.name === n))
+    .filter(Boolean);
+  return [...pinned, ...sel.filter((c) => !pinnedCols.includes(c.name))];
 }
