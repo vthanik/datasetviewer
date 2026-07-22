@@ -65,6 +65,7 @@
 
 </div>
 <p>An interactive, SAS Studio-style dataset viewer for R. <code>datasetviewer</code> renders a dataset in a fast, scrollable grid modelled on the SAS Studio table viewer, from one htmlwidget that runs in interactive Shiny apps and in static HTML documents.</p>
+<p><img src="https://github.com/vthanik/datasetviewer/raw/main/data-raw/misc_files/datasetviewer-demo.gif" alt="Animated demo: browsing a CDISC ADSL dataset, selecting columns, switching headers to labels, sorting, filtering rows, viewing column statistics, and showing the dplyr code for the current view" width="100%"></p>
 <ul>
 <li>
 <strong>Fast on large data, no sampling.</strong> The data is sent to the browser as Parquet and queried in place with DuckDB-WASM, so filtering, sorting, and scrolling stay responsive on datasets that overwhelm DOM-bound grids or server-paged tables.</li>

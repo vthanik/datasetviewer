@@ -5,6 +5,11 @@ renders a dataset in a fast, scrollable grid modelled on the SAS Studio
 table viewer, from one htmlwidget that runs in interactive Shiny apps
 and in static HTML documents.
 
+![Animated demo: browsing a CDISC ADSL dataset, selecting columns,
+switching headers to labels, sorting, filtering rows, viewing column
+statistics, and showing the dplyr code for the current
+view](https://github.com/vthanik/datasetviewer/raw/main/data-raw/misc_files/datasetviewer-demo.gif)
+
 - **Fast on large data, no sampling.** The data is sent to the browser
   as Parquet and queried in place with DuckDB-WASM, so filtering,
   sorting, and scrolling stay responsive on datasets that overwhelm

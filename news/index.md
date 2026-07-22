@@ -1,5 +1,16 @@
 # Changelog
 
+## datasetviewer 0.1.1.9000
+
+- [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
+  gains Positron-style column and row pinning from the grid context
+  menus.
+- [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
+  filter dialog: the value list is now searchable.
+- [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
+  shows per-column statistics (completeness, histogram, quantiles, top
+  values) in a “Column details” dialog on the header menu.
+
 ## datasetviewer 0.1.1
 
 CRAN release: 2026-07-09
