@@ -3,7 +3,8 @@
 // Informat is omitted: it is a SAS read-time parsing concept with no meaning
 // for already-loaded R data.
 
-import { text } from "./dom.js";
+import { text, div } from "./dom.js";
+import { renderStats } from "./column_stats.js";
 
 const FIELDS = [
   ["Label", "label"],
@@ -13,7 +14,8 @@ const FIELDS = [
   ["Format", "format"],
 ];
 
-export function createPropertyPanel(container, store) {
+export function createPropertyPanel(container, store, { getStats } = {}) {
+  let lastStatsCol = null;
   function render(state) {
     const col = state.columns[state.activeColumn];
     container.innerHTML = "";
@@ -35,6 +37,24 @@ export function createPropertyPanel(container, store) {
     });
 
     container.appendChild(table);
+
+    // Statistics for the active column (full dataset, engine-cached).
+    if (col && getStats) {
+      container.appendChild(text("div", "dv-prop-stats-head", "Statistics"));
+      const box = div("dv-prop-stats");
+      box.textContent = "Computing...";
+      container.appendChild(box);
+      lastStatsCol = col.name;
+      getStats(col.name)
+        .then((stats) => {
+          // A newer render may have swapped the panel to another column.
+          if (lastStatsCol === col.name && box.isConnected)
+            renderStats(box, stats, col);
+        })
+        .catch(() => {
+          if (box.isConnected) box.textContent = "";
+        });
+    }
   }
 
   render(store.get());

@@ -26,6 +26,7 @@ import { createAddFilterDialog } from "./shell/add_filter_dialog.js";
 import { createShowCodeDialog } from "./shell/show_code_dialog.js";
 import { dplyrCode } from "./codegen.js";
 import { showContextMenu } from "./shell/context_menu.js";
+import { showStatsCard } from "./shell/column_stats.js";
 import { exportCsv } from "./shell/export.js";
 import { wireShiny } from "./shiny.js";
 import { ICONS, MENU_ICONS } from "./shell/icons.js";
@@ -229,7 +230,9 @@ HTMLWidgets.widget({
           onShowCode: () => showCodeDialog.open(),
         });
         createColumnsPanel(colsPanel, store, { onCollapse: collapse });
-        createPropertyPanel(propPanel, store);
+        const getStats = (name) =>
+          engine ? engine.columnStats(name) : Promise.reject(new Error("loading"));
+        createPropertyPanel(propPanel, store, { getStats });
         wireShiny(el, store);
 
         function copyText(text) {
@@ -355,6 +358,11 @@ HTMLWidgets.widget({
               label: "Add Filter",
               icon: ICONS.filter,
               onClick: () => addFilterDialog.open(colMeta),
+            },
+            {
+              label: "Column details",
+              icon: MENU_ICONS.info,
+              onClick: () => showStatsCard(bounds, colMeta, getStats(colMeta.name)),
             },
             { separator: true },
             {
