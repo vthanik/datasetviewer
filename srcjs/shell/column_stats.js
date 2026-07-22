@@ -44,13 +44,21 @@ function validBlock(stats) {
   wrap.appendChild(bar);
   const t = el("table", "dv-stat-table");
   [
-    ["Valid", stats.nValid, pct(stats.nValid, stats.nTotal)],
-    ["Missing", stats.nTotal - stats.nValid, pct(stats.nTotal - stats.nValid, stats.nTotal)],
+    // The swatch ties each row to its slice of the completeness bar above.
+    ["Valid", stats.nValid, pct(stats.nValid, stats.nTotal), ACCENT],
+    ["Missing", stats.nTotal - stats.nValid, pct(stats.nTotal - stats.nValid, stats.nTotal), MISS],
     ["Unique", stats.nUnique, ""],
     ["Most common", stats.top[0] ? stats.top[0].v : "", stats.top[0] ? pct(stats.top[0].c, stats.nTotal) : ""],
-  ].forEach(([k, v, p]) => {
+  ].forEach(([k, v, p, swatch]) => {
     const tr = el("tr");
-    tr.appendChild(textNode("td", "dv-stat-k", k));
+    const kd = el("td", "dv-stat-k");
+    if (swatch) {
+      const box = el("span", "dv-stat-swatch");
+      box.style.background = swatch;
+      kd.appendChild(box);
+    }
+    kd.appendChild(document.createTextNode(k));
+    tr.appendChild(kd);
     tr.appendChild(textNode("td", "dv-stat-v", fmt(v)));
     tr.appendChild(textNode("td", "dv-stat-p", p));
     t.appendChild(tr);
