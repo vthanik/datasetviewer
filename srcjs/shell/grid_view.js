@@ -238,6 +238,27 @@ function Grid({
     setColWidths((w) => ({ ...w, [column.id]: newSize }));
   }, []);
 
+  // Whole-row tint + separator hue for pinned snapshots, so a pin reads as a
+  // pinned block, not as the data reordering itself.
+  const getRowThemeOverride = useCallback(
+    (row) =>
+      row < pinned.length
+        ? {
+            bgCell: "#eaf4fc",
+            bgCellMedium: "#eaf4fc",
+            horizontalBorderColor: "#b9d9f2",
+          }
+        : undefined,
+    [pinned.length]
+  );
+
+  // Pinning shifts every grid row index, so a selection made before the pin
+  // would highlight a different row after it; drop it instead of lying.
+  useEffect(() => {
+    setHlName(null);
+    setSelection({ columns: CompactSelection.empty(), rows: CompactSelection.empty() });
+  }, [pinned.length]);
+
   const getCellContent = useCallback(
     (cell) => {
       const [col, row] = cell;
@@ -252,11 +273,8 @@ function Grid({
           displayData: text,
           allowOverlay: false,
           contentAlign: meta.type === "Num" ? "right" : "left",
-          // Tinted so a pinned snapshot reads as pinned, not as data order.
-          themeOverride: {
-            bgCell: "#f2f8fd",
-            ...(isMissing(raw) ? { textDark: "#9097a0" } : {}),
-          },
+          // Row-level tint comes from getRowThemeOverride; only NA muting here.
+          ...(isMissing(raw) ? { themeOverride: { textDark: "#9097a0" } } : {}),
         };
       }
       const cached = cache.current.get(row - k);
@@ -381,6 +399,7 @@ function Grid({
           freezeColumns: frozenCount,
           rows: rowCount + pinned.length,
           getCellContent,
+          getRowThemeOverride,
           onVisibleRegionChanged,
           onHeaderClicked,
           onHeaderContextMenu,

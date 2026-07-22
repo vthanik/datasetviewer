@@ -68,7 +68,13 @@ export const MENU_ICONS = {
   // Checkmark: marks the active option in the columns Sort menu.
   check: M(`<path d="M3.5 8.5 L6.5 11.5 L12.5 4.5"/>`),
   // Pin/unpin column for the header context menu.
-  pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 7 3 3H7l3-3z"/><line x1="12" y1="14" x2="12" y2="21"/></svg>',
+  // Pushpin: head + flange, needle below (Positron-style pin).
+  pin: M(
+    `<path d="M6 2.5 H10 L9.3 7 L11.5 9.2 H4.5 L6.7 7 Z"/><path d="M8 9.2 V13.5"/>`
+  ),
   // Info circle: opens the "Column details" statistics card.
-  info: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="12" y1="7" x2="12" y2="7.5"/></svg>',
+  // Info circle: ring, dot, stem.
+  info: M(
+    `<circle cx="8" cy="8" r="5.7"/><path d="M8 7.4 V11"/><path d="M8 5 V5.2"/>`
+  ),
 };
