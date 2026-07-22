@@ -22,8 +22,14 @@ export function statsSql(col) {
     return { base, topk, numeric: null, histogram: null };
   }
   // Temporal kinds aggregate over epoch seconds; the numeric column over
-  // itself. min/max are ALSO cast for display via colSelect.
-  const v = col.kind === "number" ? id : `epoch(${id})`;
+  // itself. Cast tz-aware types to their core (zone-less) type FIRST:
+  // epoch() on TIMESTAMPTZ/TIMETZ autoloads the ICU extension, which the
+  // install-time engine bundle does not ship (it carries parquet only), so
+  // the un-cast form works on the CDN engine but fails on the local one.
+  // min/max are ALSO cast for display via colSelect.
+  const CORE = { date: "DATE", datetime: "TIMESTAMP", time: "TIME" };
+  const v =
+    col.kind === "number" ? id : `epoch(CAST(${id} AS ${CORE[col.kind]}))`;
   const numeric =
     `SELECT min(${v}) AS mn, max(${v}) AS mx, avg(${v}) AS mean, ` +
     `stddev(${v}) AS sd, quantile_cont(${v}, 0.25) AS q25, ` +

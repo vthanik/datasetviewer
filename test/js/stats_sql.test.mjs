@@ -30,7 +30,9 @@ test("temporal bins over epoch, numeric over the raw column", () => {
   const num = statsSql({ name: "AGE", kind: "number" });
   const dat = statsSql({ name: "TRTSDT", kind: "date" });
   assert.match(num.histogram(0, 100), /"AGE"/);
-  assert.match(dat.histogram(0, 100), /epoch\("TRTSDT"\)/);
+  // Cast to the core type inside epoch(): the tz-aware forms would autoload
+  // the ICU extension, which the local engine bundle does not ship.
+  assert.match(dat.histogram(0, 100), /epoch\(CAST\("TRTSDT" AS DATE\)\)/);
   // bins are clamped so max lands in the last bin, not one past it
   assert.match(num.histogram(0, 100), new RegExp(`${HIST_BINS - 1}`));
 });
