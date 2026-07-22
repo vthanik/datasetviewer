@@ -426,8 +426,7 @@
   flex: 0 0 auto;
   border-top: 1px solid var(--dv-rule);
   background: var(--dv-paper);
-  /* Compact: the columns list above keeps ~75-80% of the sidebar. */
-  max-height: 25%;
+  max-height: 45%;
   overflow: auto;
 }
 
@@ -1006,29 +1005,7 @@ label.dv-af-missing {
   }
 }
 
-/* ---- column statistics (property panel + floating card) ---- */
-.dv-prop-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--dv-rule);
-}
-.dv-prop-tab {
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: 12px;
-  color: #5e6a7b;
-  padding: 6px 12px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-.dv-prop-tab:hover { color: #2b3138; }
-.dv-prop-tab-active {
-  color: var(--dv-signal);
-  border-bottom-color: var(--dv-signal);
-  font-weight: 600;
-}
-.dv-prop-stats { padding: 8px 12px 10px; }
+/* ---- column statistics ("Column details" modal) ---- */
 .dv-stat-uniq { margin: 4px 0 8px; }
 .dv-stat-uniq-n { font-size: 22px; font-weight: 700; color: #2b3138; line-height: 1.1; }
 .dv-stat-uniq-lab { font-size: 11px; color: #768396; }
@@ -1054,24 +1031,13 @@ label.dv-af-missing {
   margin-right: 5px;
   vertical-align: baseline;
 }
-.dv-stat-card {
-  position: fixed;
-  z-index: 10001;
-  width: 260px;
-  max-height: 420px;
+/* Modal shell comes from .dv-modal-overlay/.dv-modal (the filter dialogs);
+   these size the stats variant and style its content. */
+.dv-stats-modal {
+  width: 380px;
+  max-height: 75vh;
   overflow: auto;
-  background: #fff;
-  border: 1px solid #d5dbe2;
-  border-radius: 3px;
-  box-shadow: 0 6px 24px rgba(20, 30, 40, 0.18);
-  padding: 12px 14px;
-  /* Appended to document.body, so set the font explicitly (it does not
-     inherit the widget root otherwise). */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
   font-size: 12px;
-  color: var(--dv-ink, #15212b);
 }
-.dv-stat-card-head { margin-bottom: 8px; }
-.dv-stat-card-title { font-weight: 700; color: #2b3138; display: block; }
-.dv-stat-card-sub { color: #768396; display: block; }
+.dv-stat-card-sub { color: #768396; margin: -4px 0 8px; }
+.dv-stat-card-body { min-height: 40px; }

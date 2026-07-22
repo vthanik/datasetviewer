@@ -61,6 +61,16 @@ export function showContextMenu(x, y, items, opener) {
 
   document.body.appendChild(menu);
 
+  // Clamp into the viewport: a menu opened near the right/bottom edge (last
+  // column, last visible row) shifts inward instead of clipping.
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth - 4) {
+    menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 4)}px`;
+  }
+  if (rect.bottom > window.innerHeight - 4) {
+    menu.style.top = `${Math.max(4, window.innerHeight - rect.height - 4)}px`;
+  }
+
   let focusIdx = -1;
   const focusRow = (i) => {
     if (!enabledRows.length) return;

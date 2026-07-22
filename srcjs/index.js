@@ -232,7 +232,7 @@ HTMLWidgets.widget({
         createColumnsPanel(colsPanel, store, { onCollapse: collapse });
         const getStats = (name) =>
           engine ? engine.columnStats(name) : Promise.reject(new Error("loading"));
-        createPropertyPanel(propPanel, store, { getStats });
+        createPropertyPanel(propPanel, store);
         wireShiny(el, store);
 
         function copyText(text) {
@@ -362,7 +362,7 @@ HTMLWidgets.widget({
             {
               label: "Column details",
               icon: MENU_ICONS.info,
-              onClick: () => showStatsCard(bounds, colMeta, getStats(colMeta.name)),
+              onClick: () => showStatsCard(el, bounds, colMeta, getStats(colMeta.name)),
             },
             { separator: true },
             {

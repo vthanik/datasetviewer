@@ -4,8 +4,7 @@
   grid context menus.
 * `dataset_viewer()` filter dialog: the value list is now searchable.
 * `dataset_viewer()` shows per-column statistics (completeness, histogram,
-  quantiles, top values) in a tabbed property pane and a "Column details"
-  card.
+  quantiles, top values) in a "Column details" dialog on the header menu.
 
 # datasetviewer 0.1.1
 

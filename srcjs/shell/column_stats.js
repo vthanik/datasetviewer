@@ -151,32 +151,43 @@ export function renderStats(container, stats, colMeta) {
   }
 }
 
-export function showStatsCard(bounds, colMeta, statsPromise) {
-  document.querySelectorAll(".dv-stat-card").forEach((c) => c.remove());
-  const card = div("dv-stat-card");
-  card.tabIndex = -1;
-  card.style.left = `${Math.max(8, bounds.x)}px`;
-  card.style.top = `${bounds.y + bounds.height}px`;
-  const head = div("dv-stat-card-head");
-  head.appendChild(textNode("span", "dv-stat-card-title", colMeta.name));
-  if (colMeta.label) head.appendChild(textNode("span", "dv-stat-card-sub", colMeta.label));
-  card.appendChild(head);
+// Centered modal, same interaction pattern as the filter dialogs (overlay
+// click or Escape or the corner x closes). `host` is the widget root the
+// filter dialogs also mount on; `bounds` is accepted for call-site symmetry
+// with the menus but unused -- a modal does not anchor.
+export function showStatsCard(host, bounds, colMeta, statsPromise) {
+  host.querySelectorAll(".dv-stats-overlay").forEach((c) => c.remove());
+  const overlay = el("div", "dv-modal-overlay");
+  overlay.classList.add("dv-stats-overlay");
+  const modal = el("div", "dv-modal");
+  modal.classList.add("dv-stats-modal");
+
+  const head = div("dv-modal-head");
+  const title = textNode("span", "dv-modal-title", colMeta.name);
+  head.appendChild(title);
+  const x = el("button", "dv-modal-x");
+  x.innerHTML = "&times;";
+  head.appendChild(x);
+  modal.appendChild(head);
+  if (colMeta.label) modal.appendChild(textNode("div", "dv-stat-card-sub", colMeta.label));
+
   const body = div("dv-stat-card-body");
   body.textContent = "Computing...";
-  card.appendChild(body);
-  document.body.appendChild(card);
-  const closeCard = () => {
-    document.removeEventListener("mousedown", onDoc);
-    card.remove();
-  };
-  const onDoc = (e) => {
-    if (!card.contains(e.target)) closeCard();
-  };
-  setTimeout(() => document.addEventListener("mousedown", onDoc), 0);
-  card.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeCard();
+  modal.appendChild(body);
+  overlay.appendChild(modal);
+  host.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  x.addEventListener("click", close);
+  overlay.addEventListener("mousedown", (e) => {
+    if (e.target === overlay) close();
   });
-  card.focus();
+  overlay.tabIndex = -1;
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+  overlay.focus();
+
   statsPromise
     .then((stats) => renderStats(body, stats, colMeta))
     .catch(() => {
