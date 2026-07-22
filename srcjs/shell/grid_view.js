@@ -193,7 +193,14 @@ function Grid({
 
   useEffect(() => {
     if (!scrollApi) return undefined;
-    scrollApi.scrollToRow = (row) => ref.current?.scrollTo(0, row, "vertical");
+    // Callers pass DATA-row indices; shift past the pinned block, except for
+    // row 0 where the true top (pins included) is what "First" should show.
+    scrollApi.scrollToRow = (row) =>
+      ref.current?.scrollTo(
+        0,
+        row === 0 ? 0 : row + pinnedRef.current.length,
+        "vertical"
+      );
     return () => {
       scrollApi.scrollToRow = undefined;
     };
@@ -299,7 +306,13 @@ function Grid({
   const onVisibleRegionChanged = useCallback(
     (range) => {
       const k = pinned.length;
-      if (onRange) onRange(range.y, Math.min(rowCount + k, range.y + range.height));
+      // Report the visible DATA-row window (pinned snapshots excluded), so the
+      // toolbar's "Rows a-b of n" stays consistent with the data row count.
+      if (onRange)
+        onRange(
+          Math.max(0, range.y - k),
+          Math.max(0, Math.min(rowCount, range.y + range.height - k))
+        );
       const start = Math.max(0, range.y - k - PREFETCH);
       const end = Math.min(rowCount, range.y - k + range.height + PREFETCH);
       let first = -1;

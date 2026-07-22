@@ -1,6 +1,6 @@
-// Kaggle-style column statistics: one renderer shared by the property-panel
-// Statistics section and the floating "Column details" card. Charts are
-// dependency-free inline SVG (single-hue bars, shell accent on neutrals).
+// Kaggle-style column statistics for the "Column details" modal (header
+// context menu). Charts are dependency-free inline SVG (single-hue bars,
+// shell accent on neutrals).
 
 import { el, text as textNode, div } from "./dom.js";
 
@@ -133,7 +133,7 @@ function quantBlock(stats) {
   return t;
 }
 
-export function renderStats(container, stats, colMeta) {
+function renderStats(container, stats, colMeta) {
   container.innerHTML = "";
   const uniq = div("dv-stat-uniq");
   uniq.appendChild(textNode("div", "dv-stat-uniq-n", String(stats.nUnique)));
