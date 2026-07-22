@@ -775,6 +775,20 @@
   font-size: 12px;
 }
 
+.dv-af-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 6px;
+  padding: 5px 8px;
+  border: 1px solid #c7ced6;
+  border-radius: 2px;
+  font: inherit;
+}
+.dv-af-search:focus {
+  outline: none;
+  border-color: #0378cd;
+}
+
 /* "(Missing)" option: a muted row in the values table, or a standalone
    checkbox under the numeric / date criteria. */
 .dv-af-table tr.dv-af-missing td {

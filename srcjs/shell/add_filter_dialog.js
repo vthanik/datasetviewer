@@ -107,6 +107,10 @@ export function createAddFilterDialog(host, { getDistinct, onApply }) {
 // ---- categorical: select one or more values --------------------------
 function buildValues(modal, colMeta, getDistinct) {
   modal.appendChild(textNode("div", "dv-af-prompt", "Select one or more values."));
+  const search = el("input", "dv-af-search");
+  search.type = "search";
+  search.placeholder = "Search values";
+  modal.appendChild(search);
   const tableWrap = el("div", "dv-af-values");
   tableWrap.textContent = "Loading values...";
   modal.appendChild(tableWrap);
@@ -140,6 +144,14 @@ function buildValues(modal, colMeta, getDistinct) {
         table.appendChild(tr);
       });
       tableWrap.appendChild(table);
+      const rows = [...table.querySelectorAll("tr")].slice(1); // skip header
+      search.addEventListener("input", () => {
+        const q = search.value.trim().toLowerCase();
+        rows.forEach((tr) => {
+          tr.style.display =
+            !q || tr.textContent.toLowerCase().includes(q) ? "" : "none";
+        });
+      });
       if (truncated) {
         const note = el("div", "dv-af-note");
         note.textContent = `Showing the first ${values.length} values.`;
