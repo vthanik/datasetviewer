@@ -117,6 +117,11 @@ function Grid({
   // index: hiding/showing columns reindexes `visible`, so an index would point
   // at the wrong column. The Glide column selection is derived from this name.
   const [hlName, setHlName] = useState(null);
+  // Width the body's VERTICAL scrollbar consumes (0 with overlay scrollbars,
+  // ~15px with classic ones). The strip has no vertical scrollbar, so its
+  // width shrinks by this amount to keep both max horizontal scrolls equal --
+  // otherwise the strip pegs short of the body when scrolled fully right.
+  const [vScrollbarW, setVScrollbarW] = useState(0);
 
   useEffect(() => store.subscribe(setSnap), [store]);
 
@@ -461,11 +466,19 @@ function Grid({
   // comparison is one property read when nothing changed.
   useEffect(() => {
     let raf = 0;
+    let lastSbw = -1;
     const tick = () => {
       const scrollers = wrapRef.current?.querySelectorAll(".dvn-scroller");
       if (scrollers && scrollers.length >= 2) {
         const strip = scrollers[0];
         const body = scrollers[1];
+        // Classic scrollbars shrink the body's client area; mirror that onto
+        // the strip's width (state change only when the measure changes).
+        const sbw = body.offsetWidth - body.clientWidth;
+        if (sbw !== lastSbw) {
+          lastSbw = sbw;
+          setVScrollbarW(sbw);
+        }
         if (strip.scrollLeft !== body.scrollLeft) strip.scrollLeft = body.scrollLeft;
       }
       raf = requestAnimationFrame(tick);
@@ -524,7 +537,7 @@ function Grid({
         gridSelection: stripSelection,
         onGridSelectionChange: () => {},
         smoothScrollX: true,
-        width: size.width,
+        width: Math.max(0, size.width - vScrollbarW),
         height: stripHeight,
       })
     : null;
