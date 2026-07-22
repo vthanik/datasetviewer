@@ -31,7 +31,13 @@ function svg(tag, attrs) {
 // Valid/missing completeness bar + counts table.
 function validBlock(stats) {
   const wrap = div("dv-stat-valid");
-  const bar = svg("svg", { width: W, height: 8, class: "dv-stat-bar" });
+  // viewBox + preserveAspectRatio none: the bar stretches with the panel
+  // width (drag-resize) instead of clipping at a fixed pixel width.
+  const bar = svg("svg", {
+    viewBox: `0 0 ${W} 8`,
+    preserveAspectRatio: "none",
+    class: "dv-stat-bar",
+  });
   const validW = stats.nTotal ? Math.round((W * stats.nValid) / stats.nTotal) : 0;
   bar.appendChild(svg("rect", { x: 0, y: 0, width: W, height: 8, fill: MISS }));
   bar.appendChild(svg("rect", { x: 0, y: 0, width: validW, height: 8, fill: ACCENT }));
@@ -57,7 +63,12 @@ function validBlock(stats) {
 function histBlock(stats) {
   const wrap = div("dv-stat-hist");
   const H = 64;
-  const g = svg("svg", { width: W, height: H, class: "dv-stat-histsvg" });
+  // Full-width like the completeness bar; bars stretch with the panel.
+  const g = svg("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    preserveAspectRatio: "none",
+    class: "dv-stat-histsvg",
+  });
   const max = Math.max(...stats.hist.map((b) => b.c), 1);
   const bw = W / stats.hist.length;
   stats.hist.forEach((b, i) => {
