@@ -9,6 +9,7 @@
 import * as duckdb from "@duckdb/duckdb-wasm";
 import { Type } from "apache-arrow";
 import { quoteId, colSelect, colExpr } from "./sql_expr.js";
+import { statsSql, HIST_BINS } from "./stats_sql.js";
 
 const VIEW = "dv_data";
 const FILE = "dv_data.parquet";
@@ -128,6 +129,7 @@ export async function createEngine() {
   let columns = [];
   let rowCount = 0;
   let selectList = "*";
+  const statsCache = new Map();
 
   return {
     async load(bytes) {
@@ -143,6 +145,7 @@ export async function createEngine() {
       selectList = columns.map(colExpr).join(", ");
       const ct = await conn.query(`SELECT count(*)::BIGINT AS n FROM ${VIEW}`);
       rowCount = Number(ct.toArray()[0].n);
+      statsCache.clear();
       return { columns, rowCount };
     },
 
@@ -197,6 +200,45 @@ export async function createEngine() {
         `SELECT count(*)::BIGINT AS n FROM ${VIEW}${w}`
       );
       return Number(ct.toArray()[0].n);
+    },
+
+    // Kaggle-style stats for one column, over the FULL dataset. Cached: the
+    // data never changes after load, so each column computes once.
+    async columnStats(name) {
+      if (statsCache.has(name)) return statsCache.get(name);
+      const col = columns.find((c) => c.name === name) || { name, kind: "string" };
+      const q = statsSql(col);
+      const num = (x) => (x == null ? null : typeof x === "bigint" ? Number(x) : x);
+      const b = (await conn.query(q.base)).toArray()[0];
+      const top = (await conn.query(q.topk))
+        .toArray()
+        .map((r) => ({ v: r.v == null ? null : String(r.v), c: num(r.c) }));
+      const out = {
+        nTotal: num(b.n_total),
+        nValid: num(b.n_valid),
+        nUnique: num(b.n_unique),
+        top,
+        min: null, max: null, mean: null, sd: null,
+        q25: null, q50: null, q75: null,
+        minDisp: null, maxDisp: null, hist: null,
+      };
+      if (q.numeric && out.nValid > 0) {
+        const n = (await conn.query(q.numeric)).toArray()[0];
+        Object.assign(out, {
+          min: num(n.mn), max: num(n.mx), mean: num(n.mean), sd: num(n.sd),
+          q25: num(n.q25), q50: num(n.q50), q75: num(n.q75),
+          minDisp: n.mn_disp == null ? null : String(n.mn_disp),
+          maxDisp: n.mx_disp == null ? null : String(n.mx_disp),
+        });
+        if (out.max > out.min) {
+          const h = (await conn.query(q.histogram(out.min, out.max))).toArray();
+          const hist = Array.from({ length: HIST_BINS }, (_, i) => ({ bin: i, c: 0 }));
+          h.forEach((r) => { const i = num(r.bin); if (hist[i]) hist[i].c = num(r.c); });
+          out.hist = hist;
+        }
+      }
+      statsCache.set(name, out);
+      return out;
     },
 
     columns() {
