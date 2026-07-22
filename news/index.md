@@ -1,6 +1,6 @@
 # Changelog
 
-## datasetviewer 0.1.1.9000
+## datasetviewer 0.2.0
 
 - [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
   gains Positron-style column and row pinning from the grid context
@@ -10,6 +10,9 @@
 - [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
   shows per-column statistics (completeness, histogram, quantiles, top
   values) in a “Column details” dialog on the header menu.
+- [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/reference/dataset_viewer.md)
+  no longer errors in the browser when every column is unchecked in the
+  columns panel while the grid is drawing.
 
 ## datasetviewer 0.1.1
 
