@@ -155,13 +155,42 @@ Right-click any column header for a per-column menu.
 | # | Menu item | Action |
 |:--:|---|---|
 | 1 | **Copy Column** | Copy the column's values to the clipboard. |
-| 2 | **Copy Header** | Copy the column's name (or label). |
+| 2 | **Pin Column** | Freeze this column at the left edge of the grid (see below). |
 | 3 | **Sort Ascending** | Add this column to the sort, ascending. |
 | 4 | **Sort Descending** | Add this column to the sort, descending. |
 | 5 | **Clear Sorting** | Remove this column from the sort (greyed when the column is unsorted). |
 | 6 | **Add Filter** | Open the type-aware filter dialog for this column (below). |
-| 7 | **Size grid columns to content** | Auto-fit every column width to its contents. |
-| 8 | **Restore original column widths** | Reset every column to the default width. |
+| 7 | **Column details** | Open the per-column statistics dialog (see below). |
+| 8 | **Size grid columns to content** | Auto-fit every column width to its contents. |
+| 9 | **Restore original column widths** | Reset every column to the default width. |
+
+## Pinning columns and rows
+
+**Pin Column** (header menu) freezes the column at the left edge of the grid,
+where it stays put while you scroll horizontally — the anchor for wide
+datasets, with the subject identifier pinned while you pan across a hundred
+analysis columns. A pinned column keeps working like any other: it sorts,
+filters, and exports; a thin accent bar marks it as pinned. **Unpin Column**
+in the same menu releases it, and a pinned column that you hide in the columns
+panel stays latently pinned — it returns to the frozen edge when re-shown.
+
+**Pin Row** (right-click a row *number*) snapshots the row into a strip at the
+top of the grid, directly under the headers. The strip keeps the row number the row displayed when you
+pinned it, so "row 8" still reads as row 8 even after the grid is re-sorted or
+filtered above it — pin the rows you are comparing, then sort and filter
+freely. Right-click a pinned row to copy or unpin it.
+
+![](figures/pinning.png)
+
+## Column details
+
+**Column details** (header menu) opens a statistics dialog for the column,
+computed by DuckDB over the whole dataset — never a sample. Every column
+reports its completeness (valid versus missing) and unique-value count; a
+numeric column adds a histogram with mean, standard deviation, and quartiles,
+while a categorical column lists its most frequent values with their shares.
+
+![](figures/column-details.png){width=420px}
 
 ## Filtering the whole table
 
