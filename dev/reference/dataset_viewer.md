@@ -23,7 +23,7 @@ dataset_viewer(
 
   *Dataset to view.* `<data.frame | character(1)>`. A data frame, or a
   file path read via
-  [`artoo::read_dataset()`](https://vthanik.github.io/artoo/reference/read_dataset.html)
+  [`artoo::read_dataset()`](https://rdrr.io/pkg/artoo/man/read_dataset.html)
   (xpt, Dataset-JSON, NDJSON, 'Parquet', RDS). An artoo-conformed frame
   supplies labels, formats, and lengths to the property panel; a plain
   frame uses synthesized metadata.

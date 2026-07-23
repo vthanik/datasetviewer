@@ -26,7 +26,7 @@ CRAN release: 2026-07-09
 - [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/dev/reference/dataset_viewer.md)
   renders a SAS Studio-style interactive grid for a data frame, an
   artoo-conformed frame, or a file path read via
-  [`artoo::read_dataset()`](https://vthanik.github.io/artoo/reference/read_dataset.html).
+  [`artoo::read_dataset()`](https://rdrr.io/pkg/artoo/man/read_dataset.html).
   The data is sent to the browser as Parquet and queried in place with
   DuckDB-WASM, so filter, sort, and scroll stay fast on large datasets
   without sampling rows.

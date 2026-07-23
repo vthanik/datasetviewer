@@ -56,10 +56,17 @@ already at home:
   to cycle its sort: ascending, descending, and back to unsorted.
   Shift-click further headers to build a multi-column sort; each sorted
   column shows its direction and priority (`AGE ↑1`, `SEX ↓2`).
-- **Header menu** — right-click any column header to sort it (Sort
-  Ascending / Descending add the column to the sort; Clear Sorting
-  removes just that column), add a filter, copy the column or its
-  header, or size the columns to content.
+- **Header menu** — right-click any column header to copy or pin the
+  column, sort it (Sort Ascending / Descending add the column to the
+  sort; Clear Sorting removes just that column), add a filter, open
+  **Column details** (per-column statistics: completeness, unique
+  values, a histogram and quantiles for numeric columns, top values for
+  categorical ones), or size the columns to content.
+- **Pinning** — **Pin Column** freezes a column at the left edge so it
+  stays put while you scroll horizontally; **Pin Row** (right-click a
+  row number) snapshots the row into a strip pinned under the headers,
+  keeping its original row number. Both show an accent bar and unpin the
+  same way.
 - **Status bar** — the total row and column counts, and the filtered
   count once a filter is active.
 
@@ -95,7 +102,7 @@ it is consulted only when present.
 > [`dataset_viewer()`](https://vthanik.github.io/datasetviewer/dev/reference/dataset_viewer.md)
 > also accepts a **path** to a dataset file
 > (`dataset_viewer("adsl.parquet")`);
-> [`artoo::read_dataset()`](https://vthanik.github.io/artoo/reference/read_dataset.html)
+> [`artoo::read_dataset()`](https://rdrr.io/pkg/artoo/man/read_dataset.html)
 > reads it, carrying its metadata into the property pane.
 
 ## Filtering the whole table
